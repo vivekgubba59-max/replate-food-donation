@@ -7,22 +7,66 @@
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = path.join(__dirname, 'replate.db');
+const isServerless = Boolean(
+  process.env.VERCEL ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.LAMBDA_TASK_ROOT
+);
+
+/**
+ * Determine writable database path.
+ * In serverless environments (Vercel, AWS Lambda), the root filesystem is read-only.
+ * The only writable directory is /tmp.
+ */
+function getDbPath() {
+  if (isServerless) {
+    const tmpDbPath = path.join('/tmp', 'replate.db');
+    const bundledDbPath = path.join(__dirname, 'replate.db');
+    try {
+      if (!fs.existsSync(tmpDbPath) && fs.existsSync(bundledDbPath)) {
+        fs.copyFileSync(bundledDbPath, tmpDbPath);
+      }
+    } catch (e) {
+      // If copying fails, SQLite will create a fresh database file in /tmp
+    }
+    return tmpDbPath;
+  }
+  return path.join(__dirname, 'replate.db');
+}
 
 let dbInstance = null;
+let dbStatus = {
+  type: 'none',
+  path: '',
+  isServerless
+};
+
+function getDbStatus() {
+  return { ...dbStatus };
+}
 
 /**
  * Initialize or get database connection.
- * Supports better-sqlite3 with seamless fallback to node:sqlite.
+ * Resilient multi-tier strategy:
+ * Tier 1: better-sqlite3 (native fast bindings)
+ * Tier 2: node:sqlite DatabaseSync (Node 22 built-in, zero external dependencies)
+ * Tier 3: in-memory DatabaseSync fallback (:memory:)
  */
 function getDb() {
   if (dbInstance) return dbInstance;
 
+  let targetPath = getDbPath();
+
+  // Tier 1: Try better-sqlite3
   try {
     const Database = require('better-sqlite3');
-    const db = new Database(DB_PATH);
-    db.pragma('foreign_keys = ON');
-    db.pragma('journal_mode = WAL');
+    const db = new Database(targetPath);
+    try { db.pragma('foreign_keys = ON'); } catch (e) {}
+    if (!isServerless) {
+      try { db.pragma('journal_mode = WAL'); } catch (e) {}
+    } else {
+      try { db.pragma('journal_mode = DELETE'); } catch (e) {}
+    }
     dbInstance = {
       type: 'better-sqlite3',
       raw: db,
@@ -42,41 +86,60 @@ function getDb() {
         };
       },
       close: () => {
-        db.close();
+        try { db.close(); } catch (e) {}
         dbInstance = null;
       }
     };
-  } catch (err) {
-    // Fallback to Node.js 22+ built-in node:sqlite
-    const { DatabaseSync } = require('node:sqlite');
-    const db = new DatabaseSync(DB_PATH);
-    db.exec('PRAGMA foreign_keys = ON;');
-    dbInstance = {
-      type: 'node:sqlite',
-      raw: db,
-      exec: (sql) => db.exec(sql),
-      prepare: (sql) => {
-        const stmt = db.prepare(sql);
-        return {
-          all: (...params) => stmt.all(...params),
-          get: (...params) => stmt.get(...params),
-          run: (...params) => {
-            const res = stmt.run(...params);
-            return {
-              lastInsertRowid: Number(res.lastInsertRowid),
-              changes: res.changes
-            };
-          }
-        };
-      },
-      close: () => {
-        db.close();
-        dbInstance = null;
+    dbStatus = { type: 'better-sqlite3', path: targetPath, isServerless };
+    return dbInstance;
+  } catch (err1) {
+    // Tier 2: Fallback to Node.js 22+ built-in node:sqlite
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      let db;
+      try {
+        db = new DatabaseSync(targetPath);
+      } catch (pathErr) {
+        // If file access failed, fallback to in-memory SQLite
+        targetPath = ':memory:';
+        db = new DatabaseSync(targetPath);
       }
-    };
+      try { db.exec('PRAGMA foreign_keys = ON;'); } catch (e) {}
+      if (!isServerless) {
+        try { db.exec('PRAGMA journal_mode = WAL;'); } catch (e) {}
+      } else {
+        try { db.exec('PRAGMA journal_mode = DELETE;'); } catch (e) {}
+      }
+      dbInstance = {
+        type: 'node:sqlite',
+        raw: db,
+        exec: (sql) => db.exec(sql),
+        prepare: (sql) => {
+          const stmt = db.prepare(sql);
+          return {
+            all: (...params) => stmt.all(...params),
+            get: (...params) => stmt.get(...params),
+            run: (...params) => {
+              const res = stmt.run(...params);
+              return {
+                lastInsertRowid: Number(res.lastInsertRowid),
+                changes: res.changes
+              };
+            }
+          };
+        },
+        close: () => {
+          try { db.close(); } catch (e) {}
+          dbInstance = null;
+        }
+      };
+      dbStatus = { type: 'node:sqlite', path: targetPath, isServerless };
+      return dbInstance;
+    } catch (err2) {
+      console.error('CRITICAL: All SQLite engines failed:', err2.message);
+      throw err2;
+    }
   }
-
-  return dbInstance;
 }
 
 /**
@@ -894,6 +957,7 @@ function resetDb() {
 
 module.exports = {
   getDb,
+  getDbStatus,
   initDb,
   formatDate,
   getAllDonations,

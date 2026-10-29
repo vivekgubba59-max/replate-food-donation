@@ -6,14 +6,19 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const db = require('./db');
 const matcher = require('./matcher');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Initialize SQLite database and seeds
-db.initDb();
+// Initialize SQLite database and seeds with resilient error guard
+try {
+  db.initDb();
+} catch (initErr) {
+  console.error('Warning during database initialization:', initErr.message);
+}
 
 // Middlewares
 app.use(cors());
@@ -24,10 +29,36 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/static', express.static(path.join(__dirname, 'static')));
 
 // ---------------------------------------------------------------------------
+// Health & Diagnostic Endpoint
+// ---------------------------------------------------------------------------
+app.get('/api/health', (req, res) => {
+  const dbStatus = typeof db.getDbStatus === 'function' ? db.getDbStatus() : { status: 'connected' };
+  res.json({
+    status: 'ok',
+    app: 'RePlate',
+    environment: process.env.VERCEL ? 'vercel-serverless' : 'standard-node',
+    nodeVersion: process.version,
+    database: dbStatus,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Frontend Route
 // ---------------------------------------------------------------------------
 app.get(['/', '/index.html'], (req, res) => {
-  res.sendFile(path.join(__dirname, 'templates', 'index.html'));
+  const candidates = [
+    path.join(__dirname, 'templates', 'index.html'),
+    path.join(process.cwd(), 'templates', 'index.html')
+  ];
+
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+
+  return res.status(200).send('<h1>RePlate — Intelligent Food Rescue Platform</h1><p>API is active at <a href="/api/health">/api/health</a> and <a href="/api/donations">/api/donations</a>.</p>');
 });
 
 // ---------------------------------------------------------------------------
