@@ -274,7 +274,44 @@ async function runTests() {
       assert(delivRes.data.data.status === 'Delivered', 'Status must be Delivered');
     });
 
-    // Test 10: Delete available donation
+    // Test 10: Beginner Workflow (/request and 'Completed' status)
+    await test('Beginner Workflow: POST /request and target_status: Completed', async () => {
+      // Create donation
+      const createRes = await request('POST', '/api/donations', {
+        donor_id: 1,
+        food_name: 'Dinner Buffet Extras',
+        category: 'Cooked Meals',
+        quantity: 30,
+        preparation_time: '2026-10-29 18:00',
+        expiry_time: '2026-10-29 23:00',
+        pickup_address: '100 Grand Boulevard'
+      });
+      const dId = createRes.data.data.id;
+
+      // 1. Request via /request alias
+      const reqRes = await request('POST', `/api/donations/${dId}/request`, {
+        ngo_id: 1,
+        notes: 'Requested by Hope Street'
+      });
+      assert(reqRes.status === 200, 'Expected 200 on /request');
+
+      // 2. Pick up
+      const pickRes = await request('POST', `/api/donations/${dId}/status`, {
+        target_status: 'Picked Up',
+        notes: 'Driver collected'
+      });
+      assert(pickRes.status === 200, 'Expected 200 on Picked Up');
+
+      // 3. Complete
+      const compRes = await request('POST', `/api/donations/${dId}/status`, {
+        target_status: 'Completed',
+        notes: 'Meals distributed to community'
+      });
+      assert(compRes.status === 200, 'Expected 200 on Completed');
+      assert(compRes.data.data.status === 'Completed', 'Status must be Completed');
+    });
+
+    // Test 11: Delete available donation
     await test('DELETE /api/donations/:id removes an available donation', async () => {
       // Create a temporary donation to delete
       const tempRes = await request('POST', '/api/donations', {
@@ -304,6 +341,8 @@ async function runTests() {
       const { summary, environmental, by_category, by_status } = res.data.data;
       assert(summary.total_meals_donated > 0, 'Total meals must be positive');
       assert(summary.meals_delivered > 0, 'Meals delivered must be positive');
+      assert(summary.completed_donations !== undefined, 'completed_donations alias must be present');
+      assert(summary.meals_shared !== undefined, 'meals_shared alias must be present');
       assert(environmental.kg_diverted > 0, 'Kg diverted must be positive');
       assert(environmental.co2_saved_kg > 0, 'CO2 saved must be positive');
       assert(environmental.water_saved_liters > 0, 'Water saved must be positive');

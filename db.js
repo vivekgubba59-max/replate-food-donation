@@ -769,9 +769,10 @@ function claimDonation(donationId, ngoId, notes) {
 
 function advanceDonationStatus(donationId, targetStatus, notes) {
   const validTransitions = {
-    Available: ['Claimed'],
+    Available: ['Claimed', 'Requested'],
     Claimed: ['Picked Up'],
-    'Picked Up': ['Delivered']
+    Requested: ['Picked Up'],
+    'Picked Up': ['Delivered', 'Completed']
   };
 
   const db = getDb();
@@ -801,14 +802,14 @@ function advanceDonationStatus(donationId, targetStatus, notes) {
           beneficiary_notes = COALESCE(?, beneficiary_notes)
       WHERE id = ?
     `).run(nowStr, notes || null, Number(donationId));
-  } else if (targetStatus === 'Delivered') {
+  } else if (targetStatus === 'Delivered' || targetStatus === 'Completed') {
     db.prepare(`
       UPDATE donations
-      SET status = 'Delivered',
+      SET status = ?,
           delivered_at = ?,
           beneficiary_notes = COALESCE(?, beneficiary_notes)
       WHERE id = ?
-    `).run(nowStr, notes || null, Number(donationId));
+    `).run(targetStatus, nowStr, notes || null, Number(donationId));
   }
 
   db.prepare(`
@@ -836,14 +837,18 @@ function getImpactMetrics() {
     SELECT 
       COUNT(*) as total_donations,
       COALESCE(SUM(quantity), 0) as total_meals_donated,
-      COALESCE(SUM(CASE WHEN status = 'Delivered' THEN quantity ELSE 0 END), 0) as meals_delivered,
+      COALESCE(SUM(CASE WHEN status IN ('Delivered', 'Completed') THEN quantity ELSE 0 END), 0) as meals_delivered,
       COALESCE(SUM(CASE WHEN status = 'Picked Up' THEN quantity ELSE 0 END), 0) as meals_in_transit,
-      COALESCE(SUM(CASE WHEN status = 'Claimed' THEN quantity ELSE 0 END), 0) as meals_claimed,
+      COALESCE(SUM(CASE WHEN status IN ('Claimed', 'Requested') THEN quantity ELSE 0 END), 0) as meals_claimed,
       COALESCE(SUM(CASE WHEN status = 'Available' THEN quantity ELSE 0 END), 0) as meals_pending,
-      COALESCE(SUM(CASE WHEN status = 'Delivered' THEN 1 ELSE 0 END), 0) as deliveries_completed,
+      COALESCE(SUM(CASE WHEN status IN ('Delivered', 'Completed') THEN 1 ELSE 0 END), 0) as deliveries_completed,
       COALESCE(SUM(CASE WHEN status = 'Available' THEN 1 ELSE 0 END), 0) as active_listings
     FROM donations
   `).get();
+
+  // Add beginner-friendly aliases
+  totals.completed_donations = totals.deliveries_completed;
+  totals.meals_shared = totals.meals_delivered;
 
   const byCategory = db.prepare(`
     SELECT category, COUNT(*) as count, SUM(quantity) as quantity

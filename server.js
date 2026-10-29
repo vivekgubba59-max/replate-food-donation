@@ -293,10 +293,10 @@ app.get('/api/donations/:id/match', (req, res) => {
 // ---------------------------------------------------------------------------
 
 /**
- * POST /api/donations/:id/claim
- * NGO claims an available donation for rescue
+ * POST /api/donations/:id/claim or /api/donations/:id/request
+ * NGO claims or requests an available donation
  */
-app.post('/api/donations/:id/claim', (req, res) => {
+app.post(['/api/donations/:id/claim', '/api/donations/:id/request'], (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {

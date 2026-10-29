@@ -1,11 +1,11 @@
 /**
- * RePlate — Intelligent Food Rescue Platform
- * Front-End Architecture & Reactive Interactions
+ * RePlate — Food Donation Platform
+ * Front-End Architecture & Interactive Workflows
  */
 
 // Global State
 const state = {
-  currentView: 'rescues',
+  currentView: 'home',
   viewMode: 'grid', // 'grid' or 'table'
   donations: [],
   donors: [],
@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initFormEventListeners();
   loadInitialData();
 
-  // Periodic refresh every 45 seconds to keep countdowns active
+  // Periodic background refresh every 45 seconds to keep countdowns active
   setInterval(() => {
-    if (state.currentView === 'rescues' || state.currentView === 'dispatch') {
+    if (state.currentView === 'available' || state.currentView === 'requests' || state.currentView === 'home') {
       fetchDonations(false);
     }
   }, 45000);
@@ -57,40 +57,51 @@ function initNavigation() {
       switchView(targetView);
     });
   });
-
-  // Hero Quick action buttons
-  const heroExploreBtn = document.getElementById('hero-explore-btn');
-  if (heroExploreBtn) {
-    heroExploreBtn.addEventListener('click', () => switchView('rescues'));
-  }
-  const heroDispatchBtn = document.getElementById('hero-dispatch-btn');
-  if (heroDispatchBtn) {
-    heroDispatchBtn.addEventListener('click', () => switchView('dispatch'));
-  }
 }
 
 function switchView(viewName) {
-  state.currentView = viewName;
+  // Aliases for smooth backward compatibility
+  const viewMap = {
+    'rescues': 'available',
+    'available': 'available',
+    'home': 'home',
+    'donate': 'donate',
+    'dispatch': 'requests',
+    'requests': 'requests',
+    'request': 'requests',
+    'impact': 'dashboard',
+    'dashboard': 'dashboard',
+    'about': 'about',
+    'algorithm': 'about',
+    'directory': 'about'
+  };
+
+  const normalizedView = viewMap[viewName] || 'home';
+  state.currentView = normalizedView;
 
   // Update tabs active state
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.view === viewName);
+    const btnView = btn.dataset.view;
+    btn.classList.toggle('active', btnView === normalizedView);
   });
 
   // Update view panels
   document.querySelectorAll('.view-panel').forEach(panel => {
-    panel.classList.toggle('active', panel.id === `view-${viewName}`);
+    panel.classList.toggle('active', panel.id === `view-${normalizedView}`);
   });
 
-  // Load view-specific data
-  if (viewName === 'rescues') {
+  // View-specific actions
+  if (normalizedView === 'home') {
+    renderHomePreview();
+    updateDashboardCounters();
+  } else if (normalizedView === 'available') {
     renderDonations();
-  } else if (viewName === 'dispatch') {
+  } else if (normalizedView === 'donate') {
+    initDonatePageView();
+  } else if (normalizedView === 'requests') {
     renderDispatchPipeline();
-  } else if (viewName === 'impact') {
+  } else if (normalizedView === 'dashboard') {
     fetchImpactMetrics();
-  } else if (viewName === 'directory') {
-    renderDirectory();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -113,7 +124,8 @@ async function fetchDonations(showLoading = true) {
       state.donations = data.data;
       updateRescuesCounterBadge();
       renderDonations();
-      if (state.currentView === 'dispatch') {
+      renderHomePreview();
+      if (state.currentView === 'requests' || state.currentView === 'dispatch') {
         renderDispatchPipeline();
       }
     }
@@ -156,6 +168,7 @@ async function fetchImpactMetrics() {
     if (data.success) {
       state.impact = data.data;
       renderImpactDashboard();
+      updateDashboardCounters();
     }
   } catch (err) {
     console.error('Error fetching impact metrics:', err);
@@ -170,8 +183,24 @@ function updateRescuesCounterBadge() {
   }
   const heroAvailableBadge = document.getElementById('hero-active-count');
   if (heroAvailableBadge) {
-    heroAvailableBadge.textContent = `${activeCount} Rescues Available`;
+    heroAvailableBadge.textContent = `${activeCount} Extra Food Donations Available`;
   }
+}
+
+function updateDashboardCounters() {
+  if (!state.impact) return;
+  const summary = state.impact.summary;
+  const env = state.impact.environmental;
+
+  const totalDonations = summary.total_donations || state.donations.length;
+  const completedDeliveries = summary.completed_donations !== undefined ? summary.completed_donations : summary.deliveries_completed;
+  const mealsShared = summary.meals_shared !== undefined ? summary.meals_shared : summary.meals_delivered;
+
+  // Hero Section Counters
+  setTextSafe('hero-stat-donations', totalDonations.toLocaleString());
+  setTextSafe('hero-stat-completed', completedDeliveries.toLocaleString());
+  setTextSafe('hero-stat-meals', mealsShared.toLocaleString());
+  setTextSafe('hero-stat-waste', (env.kg_diverted || 0).toLocaleString() + ' kg');
 }
 
 // ============================================================================
@@ -186,7 +215,7 @@ function initSearchAndFilters() {
       timeout = setTimeout(() => {
         state.searchQuery = e.target.value;
         fetchDonations(false);
-      }, 300);
+      }, 250);
     });
   }
 
@@ -206,7 +235,7 @@ function initSearchAndFilters() {
     });
   }
 
-  // View mode toggle
+  // View mode toggle (Cards vs Table)
   const gridBtn = document.getElementById('view-mode-grid');
   const tableBtn = document.getElementById('view-mode-table');
   if (gridBtn && tableBtn) {
@@ -226,7 +255,33 @@ function initSearchAndFilters() {
 }
 
 // ============================================================================
-// Render Donations View (Grid & Table)
+// Home Preview Render
+// ============================================================================
+function renderHomePreview() {
+  const container = document.getElementById('home-recent-donations');
+  if (!container) return;
+
+  const available = state.donations.filter(d => d.status === 'Available').slice(0, 3);
+
+  if (available.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="empty-state-icon">🍲</div>
+        <h3>No Food Donations Available Right Now</h3>
+        <p>All extra food has been claimed! Be the first to donate surplus meals today.</p>
+        <button class="btn btn-primary" onclick="openCreateDonationModal()">
+          <span>+</span> Donate Food Now
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = available.map(d => createDonationCardHTML(d)).join('');
+}
+
+// ============================================================================
+// Render Available Food View (Grid & Table)
 // ============================================================================
 function renderDonations() {
   const gridContainer = document.getElementById('donations-grid-container');
@@ -240,10 +295,10 @@ function renderDonations() {
     gridContainer.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">🍲</div>
-        <h3>No Food Rescues Found</h3>
-        <p>No donations match your active filters. Try resetting search criteria or post a new donation.</p>
+        <h3>No Food Donations Found</h3>
+        <p>No listings match your search or filter. Try resetting filters or post a new donation.</p>
         <button class="btn btn-primary" onclick="openCreateDonationModal()">
-          <span>+</span> Post First Donation
+          <span>+</span> Donate Food
         </button>
       </div>
     `;
@@ -263,9 +318,9 @@ function renderDonations() {
 
 function createDonationCardHTML(d) {
   const isAvailable = d.status === 'Available';
-  const isClaimed = d.status === 'Claimed';
+  const isClaimed = d.status === 'Claimed' || d.status === 'Requested';
   const isPickedUp = d.status === 'Picked Up';
-  const isDelivered = d.status === 'Delivered';
+  const isDelivered = d.status === 'Delivered' || d.status === 'Completed';
 
   const categoryClass = getCategoryClass(d.category);
   const statusClass = getStatusClass(d.status);
@@ -277,6 +332,8 @@ function createDonationCardHTML(d) {
   if (isDelivered) statusStripClass = 'status-delivered';
   if (isAvailable && expiryInfo.isUrgent) statusStripClass = 'status-urgent';
 
+  const displayStatus = isClaimed ? 'Requested' : isDelivered ? 'Completed' : d.status;
+
   return `
     <div class="donation-card ${statusStripClass}">
       <div class="card-top-strip"></div>
@@ -286,7 +343,7 @@ function createDonationCardHTML(d) {
             ${getCategoryIcon(d.category)} ${escapeHTML(d.category)}
           </span>
           <span class="status-badge ${statusClass}">
-            ${escapeHTML(d.status)}
+            ${escapeHTML(displayStatus)}
           </span>
         </div>
 
@@ -295,7 +352,7 @@ function createDonationCardHTML(d) {
         <div class="card-donor-info">
           <span>🏛️</span>
           <strong>${escapeHTML(d.donor_name)}</strong>
-          <span>• ${escapeHTML(d.donor_type)}</span>
+          <span>• ${escapeHTML(d.donor_type || 'Donor')}</span>
         </div>
 
         <div class="card-meta-chips">
@@ -322,37 +379,37 @@ function createDonationCardHTML(d) {
 
         ${d.ngo_name ? `
           <div class="claimed-ngo-badge">
-            <strong>🚚 Rescued by:</strong> ${escapeHTML(d.ngo_name)}
-            ${d.beneficiary_notes ? `<div style="font-size:0.75rem;margin-top:2px;color:#1E3A8A;">Status Note: ${escapeHTML(d.beneficiary_notes)}</div>` : ''}
+            <strong>🤝 Requested by:</strong> ${escapeHTML(d.ngo_name)}
+            ${d.beneficiary_notes ? `<div style="font-size:0.75rem;margin-top:2px;color:#1E3A8A;">Note: ${escapeHTML(d.beneficiary_notes)}</div>` : ''}
           </div>
         ` : ''}
 
         <div class="card-actions">
           <div class="card-actions-left">
             ${isAvailable ? `
-              <button class="btn btn-outline-emerald btn-sm" onclick="openSmartMatchModal(${d.id})" title="Intelligent NGO Match Engine">
-                ⚡ Match NGOs
-              </button>
               <button class="btn btn-primary btn-sm" onclick="openClaimModal(${d.id})">
-                🚚 Claim
+                🤝 Request Food
+              </button>
+              <button class="btn btn-outline-emerald btn-sm" onclick="openSmartMatchModal(${d.id})" title="View closest recommended charities">
+                ⚡ Best NGO Match
               </button>
             ` : ''}
 
             ${isClaimed ? `
               <button class="btn btn-primary btn-sm" onclick="advanceStatus(${d.id}, 'Picked Up')">
-                📦 Pick Up
+                📦 Mark Picked Up
               </button>
             ` : ''}
 
             ${isPickedUp ? `
               <button class="btn btn-primary btn-sm" onclick="advanceStatus(${d.id}, 'Delivered')">
-                ✅ Deliver
+                ✅ Mark Completed
               </button>
             ` : ''}
 
             ${isDelivered ? `
               <span style="font-size:0.8rem; font-weight:700; color:var(--primary-700);">
-                🎉 Waste Prevented!
+                🎉 Meals Shared!
               </span>
             ` : ''}
           </div>
@@ -386,7 +443,7 @@ function createDonationsTableHTML(donations) {
             <th>Quantity</th>
             <th>Donor Organization</th>
             <th>Pickup Location</th>
-            <th>Time Window</th>
+            <th>Freshness Window</th>
             <th>Status</th>
             <th style="text-align: right;">Action</th>
           </tr>
@@ -394,6 +451,10 @@ function createDonationsTableHTML(donations) {
         <tbody>
           ${donations.map(d => {
             const expiry = formatExpiryCountdown(d.expiry_time);
+            const isClaimed = d.status === 'Claimed' || d.status === 'Requested';
+            const isDelivered = d.status === 'Delivered' || d.status === 'Completed';
+            const displayStatus = isClaimed ? 'Requested' : isDelivered ? 'Completed' : d.status;
+
             return `
               <tr>
                 <td>
@@ -420,18 +481,18 @@ function createDonationsTableHTML(donations) {
                 </td>
                 <td>
                   <span class="status-badge ${getStatusClass(d.status)}">
-                    ${escapeHTML(d.status)}
+                    ${escapeHTML(displayStatus)}
                   </span>
                 </td>
                 <td style="text-align: right; white-space: nowrap;">
                   ${d.status === 'Available' ? `
+                    <button class="btn btn-primary btn-sm" onclick="openClaimModal(${d.id})">
+                      🤝 Request
+                    </button>
                     <button class="btn btn-outline-emerald btn-sm" onclick="openSmartMatchModal(${d.id})">
                       ⚡ Match
                     </button>
-                    <button class="btn btn-primary btn-sm" onclick="openClaimModal(${d.id})">
-                      🚚 Claim
-                    </button>
-                  ` : d.status === 'Claimed' ? `
+                  ` : isClaimed ? `
                     <button class="btn btn-primary btn-sm" onclick="advanceStatus(${d.id}, 'Picked Up')">
                       📦 Pick Up
                     </button>
@@ -440,7 +501,7 @@ function createDonationsTableHTML(donations) {
                       ✅ Deliver
                     </button>
                   ` : `
-                    <span style="font-size:0.8rem; color:var(--primary-700); font-weight:700;">Complete</span>
+                    <span style="font-size:0.8rem; color:var(--primary-700); font-weight:700;">Completed ✓</span>
                   `}
                 </td>
               </tr>
@@ -453,9 +514,19 @@ function createDonationsTableHTML(donations) {
 }
 
 // ============================================================================
-// Render NGO Dispatch Hub Pipeline (Kanban / Stepper)
+// Render Request Food / Pipeline Stepper
 // ============================================================================
 function renderDispatchPipeline() {
+  const availableList = state.donations.filter(d => d.status === 'Available');
+  const claimedList = state.donations.filter(d => d.status === 'Claimed' || d.status === 'Requested');
+  const pickedList = state.donations.filter(d => d.status === 'Picked Up');
+  const deliveredList = state.donations.filter(d => d.status === 'Delivered' || d.status === 'Completed');
+
+  setTextSafe('count-available', availableList.length);
+  setTextSafe('count-claimed', claimedList.length);
+  setTextSafe('count-picked', pickedList.length);
+  setTextSafe('count-delivered', deliveredList.length);
+
   const cols = {
     'Available': document.getElementById('pipeline-available-list'),
     'Claimed': document.getElementById('pipeline-claimed-list'),
@@ -463,38 +534,21 @@ function renderDispatchPipeline() {
     'Delivered': document.getElementById('pipeline-delivered-list')
   };
 
-  const counts = {
-    'Available': document.getElementById('count-available'),
-    'Claimed': document.getElementById('count-claimed'),
-    'Picked Up': document.getElementById('count-picked'),
-    'Delivered': document.getElementById('count-delivered')
+  const lists = {
+    'Available': availableList,
+    'Claimed': claimedList,
+    'Picked Up': pickedList,
+    'Delivered': deliveredList
   };
 
-  if (!cols['Available']) return;
-
-  // Clear existing
-  Object.values(cols).forEach(col => col.innerHTML = '');
-
-  const groups = {
-    'Available': [],
-    'Claimed': [],
-    'Picked Up': [],
-    'Delivered': []
-  };
-
-  state.donations.forEach(d => {
-    if (groups[d.status]) groups[d.status].push(d);
-  });
-
-  // Render cards per column
-  Object.keys(groups).forEach(status => {
-    const list = groups[status];
-    if (counts[status]) counts[status].textContent = list.length;
+  Object.keys(cols).forEach(status => {
+    if (!cols[status]) return;
+    const list = lists[status];
 
     if (list.length === 0) {
       cols[status].innerHTML = `
-        <div style="text-align:center; padding:1.5rem 0.5rem; color:var(--neutral-400); font-size:0.85rem;">
-          No donations in this stage
+        <div style="text-align:center; padding:1.5rem; color:var(--neutral-400); font-size:0.85rem;">
+          No food in this stage
         </div>
       `;
       return;
@@ -514,15 +568,15 @@ function renderDispatchPipeline() {
           </div>
           ${d.ngo_name ? `
             <div style="font-size:0.775rem; color:var(--primary-800); background:var(--primary-50); padding:0.25rem 0.5rem; border-radius:4px; margin-bottom:0.5rem;">
-              🚚 <strong>${escapeHTML(d.ngo_name)}</strong>
+              🤝 <strong>${escapeHTML(d.ngo_name)}</strong>
             </div>
           ` : ''}
 
           <div class="pipeline-stepper-visual">
             <div class="stepper-node ${stepIdx >= 0 ? 'completed' : ''}" title="Available"></div>
-            <div class="stepper-node ${stepIdx >= 1 ? 'completed' : ''}" title="Claimed"></div>
-            <div class="stepper-node ${stepIdx >= 2 ? 'completed' : ''}" title="Picked Up"></div>
-            <div class="stepper-node ${stepIdx >= 3 ? 'completed' : ''}" title="Delivered"></div>
+            <div class="stepper-node ${stepIdx >= 1 ? 'completed' : ''}" title="Requested"></div>
+            <div class="stepper-node ${stepIdx >= 2 ? 'completed' : ''}" title="In Transit"></div>
+            <div class="stepper-node ${stepIdx >= 3 ? 'completed' : ''}" title="Completed"></div>
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.65rem;">
@@ -531,8 +585,8 @@ function renderDispatchPipeline() {
             </span>
 
             ${status === 'Available' ? `
-              <button class="btn btn-outline-emerald btn-sm" onclick="openSmartMatchModal(${d.id})">
-                ⚡ Match
+              <button class="btn btn-primary btn-sm" onclick="openClaimModal(${d.id})">
+                🤝 Request
               </button>
             ` : status === 'Claimed' ? `
               <button class="btn btn-primary btn-sm" onclick="advanceStatus(${d.id}, 'Picked Up')">
@@ -540,10 +594,10 @@ function renderDispatchPipeline() {
               </button>
             ` : status === 'Picked Up' ? `
               <button class="btn btn-primary btn-sm" onclick="advanceStatus(${d.id}, 'Delivered')">
-                ✅ Deliver
+                ✅ Complete
               </button>
             ` : `
-              <span style="font-size:0.75rem; color:var(--primary-700); font-weight:700;">Delivered ✓</span>
+              <span style="font-size:0.75rem; color:var(--primary-700); font-weight:700;">Completed ✓</span>
             `}
           </div>
         </div>
@@ -561,31 +615,30 @@ function renderImpactDashboard() {
   const summary = state.impact.summary;
   const env = state.impact.environmental;
 
-  // Update Hero counters as well!
-  setTextSafe('hero-stat-meals', summary.meals_delivered.toLocaleString());
-  setTextSafe('hero-stat-waste', env.kg_diverted.toLocaleString() + ' kg');
-  setTextSafe('hero-stat-co2', env.co2_saved_kg.toLocaleString() + ' kg');
-  setTextSafe('hero-stat-water', env.water_saved_liters.toLocaleString() + ' L');
+  const totalDonations = summary.total_donations || state.donations.length;
+  const completedDeliveries = summary.completed_donations !== undefined ? summary.completed_donations : summary.deliveries_completed;
+  const mealsShared = summary.meals_shared !== undefined ? summary.meals_shared : summary.meals_delivered;
 
-  // Update Impact view stat cards
-  setTextSafe('impact-meals-delivered', summary.meals_delivered.toLocaleString());
-  setTextSafe('impact-meals-total', summary.total_meals_donated.toLocaleString());
-  setTextSafe('impact-waste-kg', env.kg_diverted.toLocaleString() + ' kg');
-  setTextSafe('impact-co2-kg', env.co2_saved_kg.toLocaleString() + ' kg');
-  setTextSafe('impact-water-liters', env.water_saved_liters.toLocaleString() + ' L');
-  setTextSafe('impact-money-usd', '$' + env.money_saved_usd.toLocaleString());
+  // Update Hero counters
+  setTextSafe('hero-stat-donations', totalDonations.toLocaleString());
+  setTextSafe('hero-stat-completed', completedDeliveries.toLocaleString());
+  setTextSafe('hero-stat-meals', mealsShared.toLocaleString());
+  setTextSafe('hero-stat-waste', (env.kg_diverted || 0).toLocaleString() + ' kg');
+
+  // Update Dashboard stat cards
+  setTextSafe('impact-donations-total', totalDonations.toLocaleString());
+  setTextSafe('impact-deliveries-completed', completedDeliveries.toLocaleString());
+  setTextSafe('impact-meals-delivered', mealsShared.toLocaleString());
+  setTextSafe('impact-meals-total', (summary.total_meals_donated || 0).toLocaleString());
+  setTextSafe('impact-waste-kg', (env.kg_diverted || 0).toLocaleString() + ' kg');
+  setTextSafe('impact-money-usd', '$' + (env.money_saved_usd || 0).toLocaleString());
 
   // Environmental Equivalencies calculation
-  // 1 passenger vehicle generates ~4.6 metric tons CO2 / year (~12.6 kg / day)
-  const carsOffRoad = (env.co2_saved_kg / 12.6).toFixed(1);
+  const carsOffRoad = ((env.co2_saved_kg || 0) / 12.6).toFixed(1);
   setTextSafe('equiv-cars', `${carsOffRoad} Car Days`);
 
-  // Average household consumes ~300 liters water/day
-  const householdDays = Math.round(env.water_saved_liters / 300);
+  const householdDays = Math.round((env.water_saved_liters || 0) / 300);
   setTextSafe('equiv-water', `${householdDays} Household Days`);
-
-  // Zero-landfill diverted
-  setTextSafe('equiv-landfill', `${env.kg_diverted} kg`);
 
   // Render Chart.js
   renderCharts();
@@ -643,7 +696,11 @@ function renderCharts() {
 
   // Pipeline Status Bar Chart
   const statuses = state.impact.by_status || [];
-  const statusLabels = statuses.map(s => s.status);
+  const statusLabels = statuses.map(s => {
+    if (s.status === 'Claimed') return 'Requested';
+    if (s.status === 'Delivered') return 'Completed';
+    return s.status;
+  });
   const statusData = statuses.map(s => s.quantity);
 
   if (state.charts.status) {
@@ -659,9 +716,9 @@ function renderCharts() {
         data: statusData,
         backgroundColor: [
           '#10B981', // Available
-          '#3B82F6', // Claimed
+          '#3B82F6', // Requested
           '#F59E0B', // Picked Up
-          '#047857'  // Delivered
+          '#047857'  // Completed
         ],
         borderRadius: 6
       }]
@@ -686,82 +743,7 @@ function renderCharts() {
 }
 
 // ============================================================================
-// Render Partner Directory
-// ============================================================================
-function renderDirectory() {
-  const donorContainer = document.getElementById('directory-donors-list');
-  const ngoContainer = document.getElementById('directory-ngos-list');
-
-  if (donorContainer) {
-    donorContainer.innerHTML = state.donors.map(donor => `
-      <div class="directory-card">
-        <div class="dir-header">
-          <div class="dir-title">${escapeHTML(donor.name)}</div>
-          <span class="dir-tag">${escapeHTML(donor.type)}</span>
-        </div>
-        <div class="dir-body">
-          <div class="dir-detail-row">
-            <span>👤 Contact:</span>
-            <strong>${escapeHTML(donor.contact_person)}</strong>
-          </div>
-          <div class="dir-detail-row">
-            <span>📞 Phone:</span>
-            <span>${escapeHTML(donor.phone)}</span>
-          </div>
-          <div class="dir-detail-row">
-            <span>✉️ Email:</span>
-            <span>${escapeHTML(donor.email)}</span>
-          </div>
-          <div class="dir-detail-row">
-            <span>📍 Address:</span>
-            <span>${escapeHTML(donor.address)}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  if (ngoContainer) {
-    ngoContainer.innerHTML = state.ngos.map(ngo => `
-      <div class="directory-card">
-        <div class="dir-header">
-          <div class="dir-title">${escapeHTML(ngo.name)}</div>
-          <span class="dir-tag" style="background:var(--primary-100); color:var(--primary-800);">
-            ⭐ ${ngo.reliability_rating} / 5.0
-          </span>
-        </div>
-        <div class="dir-body">
-          <div style="font-weight:600; color:var(--primary-700); margin-bottom:0.4rem;">
-            🎯 ${escapeHTML(ngo.focus_area)}
-          </div>
-          <div class="dir-detail-row">
-            <span>🚚 Capacity:</span>
-            <strong>${ngo.max_capacity_meals} meals/run</strong>
-          </div>
-          <div class="dir-detail-row">
-            <span>🌐 Fleet Radius:</span>
-            <span>Up to ${ngo.operating_radius_km} km</span>
-          </div>
-          <div class="dir-detail-row">
-            <span>🥗 Accepts:</span>
-            <span style="font-size:0.75rem;">${escapeHTML(ngo.accepted_categories)}</span>
-          </div>
-          <div class="dir-detail-row">
-            <span>👤 Lead:</span>
-            <span>${escapeHTML(ngo.contact_person)} (${escapeHTML(ngo.phone)})</span>
-          </div>
-          <div class="dir-detail-row">
-            <span>📍 Dispatch Center:</span>
-            <span>${escapeHTML(ngo.address)}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-}
-
-// ============================================================================
-// Smart NGO Matcher Modal Logic
+// Smart NGO Matcher Modal Logic (Simple & Explainable)
 // ============================================================================
 async function openSmartMatchModal(donationId) {
   const modal = document.getElementById('modal-smart-match');
@@ -774,7 +756,7 @@ async function openSmartMatchModal(donationId) {
     <div style="text-align:center; padding:2rem;">
       <div class="pulse-dot" style="margin: 0 auto 1rem auto; width:14px; height:14px;"></div>
       <p style="font-size:0.9rem; color:var(--neutral-600); font-weight:600;">
-        Running multi-criteria matching algorithm...
+        Finding the closest and best-equipped charities...
       </p>
     </div>
   `;
@@ -809,7 +791,7 @@ async function openSmartMatchModal(donationId) {
     `;
 
     if (matches.length === 0) {
-      container.innerHTML = `<div class="empty-state"><p>No active NGOs currently found.</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p>No active charities currently registered.</p></div>`;
       return;
     }
 
@@ -821,7 +803,7 @@ async function openSmartMatchModal(donationId) {
 
           return `
             <div class="match-item-card ${isTop ? 'top-recommended' : ''}">
-              ${isTop ? `<div class="recommended-ribbon">⭐ Highest Match Score</div>` : ''}
+              ${isTop ? `<div class="recommended-ribbon">⭐ Top Recommendation</div>` : ''}
               
               <div class="match-item-header">
                 <div>
@@ -831,23 +813,23 @@ async function openSmartMatchModal(donationId) {
                   </div>
                 </div>
                 <div class="match-score-badge ${scoreClass}">
-                  <span>${m.total_score}%</span>
+                  <span>${m.total_score}% Match</span>
                 </div>
               </div>
 
               <!-- Quick Facts -->
               <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:0.8rem; margin-bottom:0.75rem;">
-                <span>🚗 <strong>${m.distance_km} km</strong> away</span>
-                <span>⏱️ ETA: ~<strong>${m.estimated_eta_minutes} mins</strong></span>
-                <span>🚚 Fleet Capacity: <strong>${m.ngo_capacity} meals</strong></span>
+                <span>🚗 Distance: <strong>${m.distance_km} km</strong> away</span>
+                <span>⏱️ Estimated Travel: ~<strong>${m.estimated_eta_minutes} mins</strong></span>
+                <span>🚚 Vehicle Capacity: <strong>${m.ngo_capacity} meals</strong></span>
                 <span style="color:var(--primary-700); font-weight:700;">${m.match_tier}</span>
               </div>
 
-              <!-- 5-Factor Score Breakdown Bars -->
+              <!-- Simple Breakdown Bars -->
               <div class="match-breakdown-bars">
                 <div class="breakdown-bar-item">
                   <div class="bar-label-row">
-                    <span>Proximity (35%)</span>
+                    <span>Closest Distance (35%)</span>
                     <span>${m.breakdown.distance.score} / 35</span>
                   </div>
                   <div class="bar-track">
@@ -857,7 +839,7 @@ async function openSmartMatchModal(donationId) {
 
                 <div class="breakdown-bar-item">
                   <div class="bar-label-row">
-                    <span>Urgency & ETA (25%)</span>
+                    <span>Freshness & Travel Time (25%)</span>
                     <span>${m.breakdown.urgency.score} / 25</span>
                   </div>
                   <div class="bar-track">
@@ -867,7 +849,7 @@ async function openSmartMatchModal(donationId) {
 
                 <div class="breakdown-bar-item">
                   <div class="bar-label-row">
-                    <span>Capacity Fit (20%)</span>
+                    <span>Vehicle Fit (20%)</span>
                     <span>${m.breakdown.capacity.score} / 20</span>
                   </div>
                   <div class="bar-track">
@@ -877,7 +859,7 @@ async function openSmartMatchModal(donationId) {
 
                 <div class="breakdown-bar-item">
                   <div class="bar-label-row">
-                    <span>Food Acceptance (15%)</span>
+                    <span>Food Type Fit (15%)</span>
                     <span>${m.breakdown.category_demand.score} / 15</span>
                   </div>
                   <div class="bar-track">
@@ -886,21 +868,20 @@ async function openSmartMatchModal(donationId) {
                 </div>
               </div>
 
-              <!-- Why this score? Transparent Explanations -->
+              <!-- Clear Reasons List -->
               <div class="match-factors-accordion">
-                <strong style="color:var(--neutral-800); display:block; margin-bottom:4px;">Scoring Explanations:</strong>
+                <strong style="color:var(--neutral-800); display:block; margin-bottom:4px;">Why this shelter is recommended:</strong>
                 <ul>
                   <li>• ${escapeHTML(m.breakdown.distance.explanation)}</li>
                   <li>• ${escapeHTML(m.breakdown.urgency.explanation)}</li>
                   <li>• ${escapeHTML(m.breakdown.capacity.explanation)}</li>
                   <li>• ${escapeHTML(m.breakdown.category_demand.explanation)}</li>
-                  <li>• ${escapeHTML(m.breakdown.reliability.explanation)}</li>
                 </ul>
               </div>
 
               <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.75rem;">
                 <button class="btn btn-primary btn-sm" onclick="directAssignNgo(${donation.id}, ${m.ngo_id}, '${escapeHTML(m.ngo_name)}')">
-                  🚚 Assign & Dispatch Rescue Team
+                  🤝 Request & Dispatch to ${escapeHTML(m.ngo_name)}
                 </button>
               </div>
             </div>
@@ -921,60 +902,82 @@ async function directAssignNgo(donationId, ngoId, ngoName) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ngo_id: ngoId,
-        notes: `Smart-matched and auto-dispatched to ${ngoName}`
+        notes: `Requested by ${ngoName}`
       })
     });
     const data = await res.json();
     if (data.success) {
-      showToast(`Assigned to ${ngoName}! Moved to Claimed status.`, 'success');
+      showToast(`Requested by ${ngoName}! Moved to Requested stage.`, 'success');
       closeModal('modal-smart-match');
       await fetchDonations(false);
       await fetchImpactMetrics();
     } else {
-      showToast(data.error || 'Failed to assign NGO', 'error');
+      showToast(data.error || 'Failed to request food', 'error');
     }
   } catch (err) {
-    showToast('Network error while assigning NGO', 'error');
+    showToast('Network error while requesting food', 'error');
   }
 }
 
 // ============================================================================
-// Create & Edit Donation Form Logic
+// Forms: Modal & Dedicated Page Submissions
 // ============================================================================
 function initFormEventListeners() {
-  const form = document.getElementById('form-donation');
-  if (form) {
-    form.addEventListener('submit', async (e) => {
+  // Modal donation form
+  const modalForm = document.getElementById('form-donation');
+  if (modalForm) {
+    modalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      await handleDonationSubmit();
+      await handleDonationModalSubmit();
     });
   }
 
-  // Location preset chips
+  // Location preset chips inside modal
   document.querySelectorAll('.preset-loc-chip').forEach(btn => {
     btn.addEventListener('click', () => {
-      const addr = btn.dataset.address;
-      const lat = btn.dataset.lat;
-      const lon = btn.dataset.lon;
-
-      document.getElementById('don-address').value = addr;
-      document.getElementById('don-lat').value = lat;
-      document.getElementById('don-lon').value = lon;
+      document.getElementById('don-address').value = btn.dataset.address;
+      document.getElementById('don-lat').value = btn.dataset.lat;
+      document.getElementById('don-lon').value = btn.dataset.lon;
     });
   });
 
-  // Demo Preset generator buttons
+  // Location preset chips on dedicated page
+  document.querySelectorAll('.page-loc-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('page-address').value = btn.dataset.address;
+      document.getElementById('page-lat').value = btn.dataset.lat;
+      document.getElementById('page-lon').value = btn.dataset.lon;
+    });
+  });
+
+  // Modal demo preset generator buttons
   const demoBuffetBtn = document.getElementById('demo-preset-buffet');
-  if (demoBuffetBtn) {
-    demoBuffetBtn.addEventListener('click', () => fillDemoFormPreset('buffet'));
-  }
+  if (demoBuffetBtn) demoBuffetBtn.addEventListener('click', () => fillDemoPreset('buffet', 'don'));
   const demoProduceBtn = document.getElementById('demo-preset-produce');
-  if (demoProduceBtn) {
-    demoProduceBtn.addEventListener('click', () => fillDemoFormPreset('produce'));
-  }
+  if (demoProduceBtn) demoProduceBtn.addEventListener('click', () => fillDemoPreset('produce', 'don'));
   const demoBakeryBtn = document.getElementById('demo-preset-bakery');
-  if (demoBakeryBtn) {
-    demoBakeryBtn.addEventListener('click', () => fillDemoFormPreset('bakery'));
+  if (demoBakeryBtn) demoBakeryBtn.addEventListener('click', () => fillDemoPreset('bakery', 'don'));
+
+  // Dedicated page demo preset buttons
+  const pageBuffetBtn = document.getElementById('view-preset-buffet');
+  if (pageBuffetBtn) pageBuffetBtn.addEventListener('click', () => fillDemoPreset('buffet', 'page'));
+  const pageProduceBtn = document.getElementById('view-preset-produce');
+  if (pageProduceBtn) pageProduceBtn.addEventListener('click', () => fillDemoPreset('produce', 'page'));
+  const pageBakeryBtn = document.getElementById('view-preset-bakery');
+  if (pageBakeryBtn) pageBakeryBtn.addEventListener('click', () => fillDemoPreset('bakery', 'page'));
+}
+
+function initDonatePageView() {
+  populateDonorSelects();
+  const prepInput = document.getElementById('page-prep-time');
+  const expInput = document.getElementById('page-expiry-time');
+
+  if (prepInput && !prepInput.value) {
+    const now = new Date();
+    const prep = new Date(now.getTime() - (30 * 60000));
+    const exp = new Date(now.getTime() + (3.5 * 3600000));
+    prepInput.value = formatDateTimeLocal(prep);
+    expInput.value = formatDateTimeLocal(exp);
   }
 }
 
@@ -986,20 +989,19 @@ function openCreateDonationModal() {
 
   form.reset();
   document.getElementById('don-id').value = '';
-  title.textContent = 'Post Fresh Food Donation';
+  title.textContent = 'Donate Extra Food';
 
-  // Set default prep & expiry times relative to now
+  // Set default prep & expiry times
   const now = new Date();
-  const prep = new Date(now.getTime() - (30 * 60000)); // 30 mins ago
-  const exp = new Date(now.getTime() + (3.5 * 3600000)); // 3.5 hrs from now
+  const prep = new Date(now.getTime() - (30 * 60000));
+  const exp = new Date(now.getTime() + (3.5 * 3600000));
 
   document.getElementById('don-prep-time').value = formatDateTimeLocal(prep);
   document.getElementById('don-expiry-time').value = formatDateTimeLocal(exp);
-
-  // Default coordinates to downtown
   document.getElementById('don-lat').value = '40.7150';
   document.getElementById('don-lon').value = '-74.0050';
 
+  populateDonorSelects();
   modal.classList.add('active');
 }
 
@@ -1008,7 +1010,7 @@ function openEditDonationModal(id) {
   if (!donation) return;
 
   if (donation.status !== 'Available') {
-    showToast(`Cannot edit donation in '${donation.status}' status`, 'warning');
+    showToast(`Cannot edit food donation in '${donation.status}' status`, 'warning');
     return;
   }
 
@@ -1016,7 +1018,7 @@ function openEditDonationModal(id) {
   const title = document.getElementById('donation-form-title');
   if (!modal) return;
 
-  title.textContent = 'Edit Food Donation Details';
+  title.textContent = 'Edit Food Donation';
   document.getElementById('don-id').value = donation.id;
   document.getElementById('don-donor-id').value = donation.donor_id;
   document.getElementById('don-food-name').value = donation.food_name;
@@ -1035,58 +1037,68 @@ function openEditDonationModal(id) {
   modal.classList.add('active');
 }
 
-function fillDemoFormPreset(type) {
+function fillDemoPreset(type, prefix = 'don') {
   const now = new Date();
+  const pName = `${prefix}-food-name`;
+  const pCat = `${prefix}-category`;
+  const pQty = `${prefix}-quantity`;
+  const pUnit = `${prefix}-unit`;
+  const pDiet = `${prefix}-dietary`;
+  const pStorage = `${prefix}-storage`;
+  const pDonor = `${prefix}-donor-id`;
+  const pAddr = `${prefix}-address`;
+  const pLat = `${prefix}-lat`;
+  const pLon = `${prefix}-lon`;
+  const pNotes = `${prefix}-notes`;
+  const pExp = `${prefix}-expiry-time`;
+
   if (type === 'buffet') {
-    document.getElementById('don-food-name').value = 'Executive Buffet: Herb Roasted Salmon & Wild Rice';
-    document.getElementById('don-category').value = 'Cooked Meals';
-    document.getElementById('don-quantity').value = '45';
-    document.getElementById('don-unit').value = 'meals';
-    document.getElementById('don-dietary').value = 'Non-Vegetarian';
-    document.getElementById('don-storage').value = 'Keep Hot (>60°C)';
-    document.getElementById('don-donor-id').value = '1'; // Grand Central
-    document.getElementById('don-address').value = '100 Grand Boulevard, Downtown (Kitchen Loading Dock B)';
-    document.getElementById('don-lat').value = '40.7150';
-    document.getElementById('don-lon').value = '-74.0050';
-    document.getElementById('don-notes').value = 'Freshly held in chafing pans at 65°C. Safe food rescue ready.';
-
-    const exp = new Date(now.getTime() + (2 * 3600000)); // 2 hrs window
-    document.getElementById('don-expiry-time').value = formatDateTimeLocal(exp);
+    document.getElementById(pName).value = 'Executive Buffet: Herb Roasted Salmon & Rice Pilaf';
+    document.getElementById(pCat).value = 'Cooked Meals';
+    document.getElementById(pQty).value = '50';
+    document.getElementById(pUnit).value = 'meals';
+    document.getElementById(pDiet).value = 'Non-Vegetarian';
+    document.getElementById(pStorage).value = 'Keep Hot (>60°C)';
+    document.getElementById(pDonor).value = '1';
+    document.getElementById(pAddr).value = '100 Grand Boulevard, Downtown (Kitchen Loading Dock B)';
+    document.getElementById(pLat).value = '40.7150';
+    document.getElementById(pLon).value = '-74.0050';
+    document.getElementById(pNotes).value = 'Held in chafing pans at 65°C. Safe and clean for immediate pickup.';
+    const exp = new Date(now.getTime() + (2 * 3600000));
+    document.getElementById(pExp).value = formatDateTimeLocal(exp);
   } else if (type === 'produce') {
-    document.getElementById('don-food-name').value = 'Farm Fresh Bell Peppers, Heirloom Tomatoes & Cucumbers';
-    document.getElementById('don-category').value = 'Fresh Produce';
-    document.getElementById('don-quantity').value = '90';
-    document.getElementById('don-unit').value = 'kg';
-    document.getElementById('don-dietary').value = 'Vegan';
-    document.getElementById('don-storage').value = 'Refrigerate (<4°C)';
-    document.getElementById('don-donor-id').value = '2'; // GreenLeaf
-    document.getElementById('don-address').value = '45 Market Square, West End (Rear Distribution Bay)';
-    document.getElementById('don-lat').value = '40.7280';
-    document.getElementById('don-lon').value = '-74.0120';
-    document.getElementById('don-notes').value = 'Surplus farm delivery, pristine grade. Packed in clean stackable wooden crates.';
-
-    const exp = new Date(now.getTime() + (6 * 3600000)); // 6 hrs window
-    document.getElementById('don-expiry-time').value = formatDateTimeLocal(exp);
+    document.getElementById(pName).value = 'Farm Fresh Bell Peppers, Heirloom Tomatoes & Cucumbers';
+    document.getElementById(pCat).value = 'Fresh Produce';
+    document.getElementById(pQty).value = '40';
+    document.getElementById(pUnit).value = 'kg';
+    document.getElementById(pDiet).value = 'Vegan';
+    document.getElementById(pStorage).value = 'Refrigerate (<4°C)';
+    document.getElementById(pDonor).value = '2';
+    document.getElementById(pAddr).value = '45 Market Square, West End (Rear Distribution Bay)';
+    document.getElementById(pLat).value = '40.7280';
+    document.getElementById(pLon).value = '-74.0120';
+    document.getElementById(pNotes).value = 'Crisp supermarket surplus. Sorted in 4 stackable wooden crates.';
+    const exp = new Date(now.getTime() + (6 * 3600000));
+    document.getElementById(pExp).value = formatDateTimeLocal(exp);
   } else if (type === 'bakery') {
-    document.getElementById('don-food-name').value = 'Artisan Brioche Buns, Cinnamon Rolls & Multigrain Loaves';
-    document.getElementById('don-category').value = 'Bakery';
-    document.getElementById('don-quantity').value = '70';
-    document.getElementById('don-unit').value = 'meals';
-    document.getElementById('don-dietary').value = 'Vegetarian';
-    document.getElementById('don-storage').value = 'Room Temperature';
-    document.getElementById('don-donor-id').value = '3'; // Artisan Hearth
-    document.getElementById('don-address').value = '78 Baker Street, North Quarter';
-    document.getElementById('don-lat').value = '40.7350';
-    document.getElementById('don-lon').value = '-73.9920';
-    document.getElementById('don-notes').value = 'Baked fresh early today. Separated into sanitary pastry boxes.';
-
-    const exp = new Date(now.getTime() + (4.5 * 3600000)); // 4.5 hrs
-    document.getElementById('don-expiry-time').value = formatDateTimeLocal(exp);
+    document.getElementById(pName).value = 'Artisan Sourdough Loaves, Croissants & Brioche Buns';
+    document.getElementById(pCat).value = 'Bakery';
+    document.getElementById(pQty).value = '60';
+    document.getElementById(pUnit).value = 'meals';
+    document.getElementById(pDiet).value = 'Vegetarian';
+    document.getElementById(pStorage).value = 'Room Temperature';
+    document.getElementById(pDonor).value = '3';
+    document.getElementById(pAddr).value = '78 Baker Street, North Quarter (Bakery Side Entrance)';
+    document.getElementById(pLat).value = '40.7350';
+    document.getElementById(pLon).value = '-73.9920';
+    document.getElementById(pNotes).value = 'Baked fresh early today. Packed in sanitary bakery bags.';
+    const exp = new Date(now.getTime() + (4.5 * 3600000));
+    document.getElementById(pExp).value = formatDateTimeLocal(exp);
   }
   showToast('Demo Preset Loaded!', 'success');
 }
 
-async function handleDonationSubmit() {
+async function handleDonationModalSubmit() {
   const donationId = document.getElementById('don-id').value;
   const isEdit = Boolean(donationId);
 
@@ -1107,7 +1119,7 @@ async function handleDonationSubmit() {
   };
 
   if (!payload.food_name || !payload.pickup_address || !payload.quantity) {
-    showToast('Please complete all required fields', 'error');
+    showToast('Please fill in all required fields', 'error');
     return;
   }
 
@@ -1131,12 +1143,59 @@ async function handleDonationSubmit() {
       showToast(data.error || 'Operation failed', 'error');
     }
   } catch (err) {
-    showToast('Error saving donation', 'error');
+    showToast('Error saving food donation', 'error');
+  }
+}
+
+async function handleDonatePageSubmit(event) {
+  event.preventDefault();
+
+  const payload = {
+    donor_id: document.getElementById('page-donor-id').value,
+    food_name: document.getElementById('page-food-name').value.trim(),
+    category: document.getElementById('page-category').value,
+    quantity: document.getElementById('page-quantity').value,
+    unit: document.getElementById('page-unit').value,
+    dietary_type: document.getElementById('page-dietary').value,
+    storage_instructions: document.getElementById('page-storage').value,
+    preparation_time: document.getElementById('page-prep-time').value.replace('T', ' '),
+    expiry_time: document.getElementById('page-expiry-time').value.replace('T', ' '),
+    pickup_address: document.getElementById('page-address').value.trim(),
+    latitude: document.getElementById('page-lat').value,
+    longitude: document.getElementById('page-lon').value,
+    notes: document.getElementById('page-notes').value.trim()
+  };
+
+  if (!payload.food_name || !payload.pickup_address || !payload.quantity) {
+    showToast('Please complete all required fields', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/donations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showToast('Food donation posted successfully! It is now listed under Available Food.', 'success');
+      document.getElementById('form-donate-page').reset();
+      await fetchDonations(false);
+      await fetchImpactMetrics();
+      // Switch view to Available Food to see the newly posted food immediately!
+      switchView('available');
+    } else {
+      showToast(data.error || 'Failed to post donation', 'error');
+    }
+  } catch (err) {
+    showToast('Error submitting donation', 'error');
   }
 }
 
 async function confirmDeleteDonation(id) {
-  if (!confirm('Are you sure you want to remove this donation record? This action cannot be undone.')) {
+  if (!confirm('Are you sure you want to remove this food donation? This cannot be undone.')) {
     return;
   }
 
@@ -1168,9 +1227,9 @@ function openClaimModal(donationId) {
 
   document.getElementById('claim-donation-id').value = donation.id;
   banner.innerHTML = `
-    <strong>${escapeHTML(donation.food_name)}</strong><br>
-    <span style="font-size:0.8rem; color:var(--neutral-600);">
-      📦 ${donation.quantity} ${escapeHTML(donation.unit)} from ${escapeHTML(donation.donor_name)}
+    <strong style="color:var(--neutral-900); font-size:1rem;">${escapeHTML(donation.food_name)}</strong><br>
+    <span style="font-size:0.85rem; color:var(--neutral-600);">
+      📦 ${donation.quantity} ${escapeHTML(donation.unit)} from <strong>${escapeHTML(donation.donor_name)}</strong>
     </span>
   `;
 
@@ -1191,24 +1250,24 @@ async function handleClaimSubmit(event) {
     });
     const data = await res.json();
     if (data.success) {
-      showToast('Donation claimed! Added to dispatch schedule.', 'success');
+      showToast('Food requested successfully! Added to pickup schedule.', 'success');
       closeModal('modal-claim');
       await fetchDonations(false);
       await fetchImpactMetrics();
     } else {
-      showToast(data.error || 'Claim failed', 'error');
+      showToast(data.error || 'Request failed', 'error');
     }
   } catch (err) {
-    showToast('Error submitting claim', 'error');
+    showToast('Error submitting food request', 'error');
   }
 }
 
 async function advanceStatus(donationId, targetStatus) {
   let notes = '';
   if (targetStatus === 'Delivered') {
-    notes = prompt('Enter delivery verification notes (e.g. "Delivered to 80 shelter residents"):') || 'Delivered to beneficiaries';
+    notes = prompt('Enter delivery verification note (e.g. "Shared 50 warm meals with shelter residents"):') || 'Delivered to community';
   } else if (targetStatus === 'Picked Up') {
-    notes = prompt('Volunteer Driver verification (e.g. "Driver Marcus confirmed loading"):') || 'Physical pickup completed';
+    notes = prompt('Enter volunteer pickup note (e.g. "Driver Marcus loaded food in thermal container"):') || 'Pickup completed';
   }
 
   try {
@@ -1219,14 +1278,15 @@ async function advanceStatus(donationId, targetStatus) {
     });
     const data = await res.json();
     if (data.success) {
-      showToast(`Donation marked as ${targetStatus}!`, 'success');
+      const friendlyStatus = targetStatus === 'Delivered' ? 'Completed' : targetStatus;
+      showToast(`Donation updated to "${friendlyStatus}"!`, 'success');
       await fetchDonations(false);
       await fetchImpactMetrics();
     } else {
       showToast(data.error || 'Failed to update status', 'error');
     }
   } catch (err) {
-    showToast('Error advancing status', 'error');
+    showToast('Error updating status', 'error');
   }
 }
 
@@ -1234,7 +1294,7 @@ async function advanceStatus(donationId, targetStatus) {
 // Reset Demo Seed Data
 // ============================================================================
 async function resetDemoData() {
-  if (!confirm('Reset the database to clean demo seed state? (This re-seeds realistic donors, NGOs, and sample donations for presentation)')) {
+  if (!confirm('Reset the database to clean demo seed state? (This re-seeds realistic donors, charities, and sample donations for presentation)')) {
     return;
   }
 
@@ -1242,11 +1302,11 @@ async function resetDemoData() {
     const res = await fetch('/api/reset-demo', { method: 'POST' });
     const data = await res.json();
     if (data.success) {
-      showToast('Demo data re-seeded to initial state!', 'success');
+      showToast('Demo data reset to clean initial state!', 'success');
       await loadInitialData();
     }
   } catch (err) {
-    showToast('Error resetting demo', 'error');
+    showToast('Error resetting demo data', 'error');
   }
 }
 
@@ -1254,18 +1314,21 @@ async function resetDemoData() {
 // Helper Utilities & Formatting
 // ============================================================================
 function populateDonorSelects() {
-  const sel = document.getElementById('don-donor-id');
-  if (!sel) return;
-  sel.innerHTML = state.donors.map(d => `
+  const selModal = document.getElementById('don-donor-id');
+  const selPage = document.getElementById('page-donor-id');
+  const optionsHTML = state.donors.map(d => `
     <option value="${d.id}">${escapeHTML(d.name)} (${escapeHTML(d.type)})</option>
   `).join('');
+
+  if (selModal) selModal.innerHTML = optionsHTML;
+  if (selPage) selPage.innerHTML = optionsHTML;
 }
 
 function populateNgoSelects() {
   const sel = document.getElementById('claim-ngo-id');
   if (!sel) return;
   sel.innerHTML = state.ngos.map(n => `
-    <option value="${n.id}">${escapeHTML(n.name)} (Cap: ${n.max_capacity_meals} meals)</option>
+    <option value="${n.id}">${escapeHTML(n.name)} (Capacity: ${n.max_capacity_meals} meals)</option>
   `).join('');
 }
 
@@ -1276,7 +1339,7 @@ function formatExpiryCountdown(expiryStr) {
     const diffMs = expiry - now;
 
     if (diffMs <= 0) {
-      return { label: '⚠️ Expired Window', isUrgent: true };
+      return { label: '⚠️ Urgent: Past Deadline', isUrgent: true };
     }
 
     const diffHours = diffMs / 3600000;
@@ -1288,7 +1351,7 @@ function formatExpiryCountdown(expiryStr) {
     } else if (hours < 2) {
       return { label: `⏰ Urgent: ${hours}h ${mins}m left`, isUrgent: true };
     } else {
-      return { label: `⏳ ${hours}h ${mins}m left`, isUrgent: false };
+      return { label: `⏳ Fresh for ${hours}h ${mins}m`, isUrgent: false };
     }
   } catch (e) {
     return { label: expiryStr, isUrgent: false };
@@ -1323,7 +1386,7 @@ function getCategoryIcon(cat) {
 
 function getStatusClass(status) {
   if (status === 'Available') return 'status-available';
-  if (status === 'Claimed') return 'status-claimed';
+  if (status === 'Claimed' || status === 'Requested') return 'status-claimed';
   if (status === 'Picked Up') return 'status-picked_up';
   return 'status-delivered';
 }
@@ -1361,7 +1424,7 @@ function showToast(message, type = 'success') {
       <span>${icon}</span>
       <span>${escapeHTML(message)}</span>
     </div>
-    <button style="border:none; background:none; cursor:pointer; color:var(--neutral-400); font-weight:700;" onclick="this.parentElement.remove()">✕</button>
+    <button style="border:none; background:none; cursor:pointer; color:var(--neutral-400); font-weight:700; font-size:1rem;" onclick="this.parentElement.remove()">✕</button>
   `;
 
   container.appendChild(toast);

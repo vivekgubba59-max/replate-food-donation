@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RePlate — Intelligent Food Rescue Platform</title>
+  <title>RePlate — Food Donation Platform</title>
   
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="/static/css/style.css">
   
   <!-- Favicon indicator -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍱</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍲</text></svg>">
 </head>
 <body>
 
@@ -18,110 +18,48 @@
        ====================================================================== -->
   <header class="navbar">
     <div class="nav-container">
-      <div class="brand-wrapper" onclick="switchView('rescues')">
+      <div class="brand-wrapper" onclick="switchView('home')">
         <div class="brand-logo-icon">🌿</div>
         <div class="brand-text">
           <h1>Re<span>Plate</span></h1>
-          <div class="brand-subtitle">Intelligent Food Rescue Platform</div>
+          <div class="brand-subtitle">Food Donation Platform</div>
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
+      <!-- Navigation Tabs (6 Main Features) -->
       <nav class="nav-tabs">
-        <button class="nav-tab-btn active" data-view="rescues">
-          <span>🍱 Active Rescues</span>
+        <button class="nav-tab-btn active" data-view="home">
+          <span>🏠 Home</span>
+        </button>
+        <button class="nav-tab-btn" data-view="available">
+          <span>🍲 Available Food</span>
           <span class="badge-pill" id="nav-available-count">0</span>
         </button>
-        <button class="nav-tab-btn" data-view="dispatch">
-          <span>🚚 NGO Dispatch Hub</span>
+        <button class="nav-tab-btn" data-view="donate">
+          <span>➕ Donate Food</span>
         </button>
-        <button class="nav-tab-btn" data-view="impact">
-          <span>📊 Impact Dashboard</span>
+        <button class="nav-tab-btn" data-view="requests">
+          <span>🤝 Request Food</span>
         </button>
-        <button class="nav-tab-btn" data-view="directory">
-          <span>🏛️ Directory</span>
+        <button class="nav-tab-btn" data-view="dashboard">
+          <span>📊 Dashboard</span>
         </button>
-        <button class="nav-tab-btn" data-view="algorithm">
-          <span>🧠 Matching Engine</span>
+        <button class="nav-tab-btn" data-view="about">
+          <span>ℹ️ About Us</span>
         </button>
       </nav>
 
       <!-- Nav Actions -->
       <div class="nav-actions">
-        <button class="btn btn-secondary btn-sm" onclick="resetDemoData()" title="Reset to fresh sample demo seed data for live judging">
-          <span>⚙️ Reset Seed</span>
+        <button class="btn btn-secondary btn-sm" onclick="resetDemoData()" title="Reset to fresh sample demo data for presentation">
+          <span>⚙️ Reset Demo Data</span>
         </button>
         <button class="btn btn-primary" onclick="openCreateDonationModal()">
-          <span>+</span> Post Food Donation
+          <span>+</span> Donate Food
         </button>
       </div>
     </div>
   </header>
-
-  <!-- ======================================================================
-       Hero Section
-       ====================================================================== -->
-  <section class="hero-section">
-    <div class="hero-container">
-      <div class="hero-grid">
-        <!-- Hero Text -->
-        <div>
-          <div class="hero-badge-tag">
-            <span class="pulse-dot"></span>
-            <span id="hero-active-count">Connecting Surplus to Hunger Relief</span>
-          </div>
-          <h2 class="hero-title">
-            Rescuing Surplus Food with <span class="text-emerald">Algorithmic Precision</span>
-          </h2>
-          <p class="hero-description">
-            Connecting restaurants, hotel banquets, and supermarkets with verified local NGOs before good food goes to waste. Powered by real-time proximity, shelf-life urgency, and fleet capacity matching.
-          </p>
-          <div class="hero-quick-actions">
-            <button class="btn btn-primary btn-lg" onclick="openCreateDonationModal()">
-              <span>+ Post Surplus Food</span>
-            </button>
-            <button class="btn btn-outline-white btn-lg" id="hero-explore-btn">
-              <span>🍱 Browse Rescues</span>
-            </button>
-            <button class="btn btn-secondary btn-lg" id="hero-dispatch-btn">
-              <span>🚚 Dispatch & Tracking</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Hero Stats Cards (Live from DB) -->
-        <div class="hero-stats-quad">
-          <div class="hero-stat-card">
-            <div class="stat-icon-wrap">🍲</div>
-            <div class="stat-value" id="hero-stat-meals">--</div>
-            <div class="stat-label">Meals Delivered</div>
-            <div class="stat-subtext">Verified hunger relief</div>
-          </div>
-
-          <div class="hero-stat-card">
-            <div class="stat-icon-wrap">⚖️</div>
-            <div class="stat-value" id="hero-stat-waste">--</div>
-            <div class="stat-label">Food Waste Diverted</div>
-            <div class="stat-subtext">Prevented from landfills</div>
-          </div>
-
-          <div class="hero-stat-card">
-            <div class="stat-icon-wrap">🌿</div>
-            <div class="stat-value" id="hero-stat-co2">--</div>
-            <div class="stat-label">CO2e Emissions Saved</div>
-            <div class="stat-subtext">Greenhouse reduction</div>
-          </div>
-
-          <div class="hero-stat-card">
-            <div class="stat-icon-wrap">💧</div>
-            <div class="stat-value" id="hero-stat-water">--</div>
-            <div class="stat-label">Water Footprint Saved</div>
-            <div class="stat-subtext">Embedded agricultural H2O</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- ======================================================================
        Main Content Views Container
@@ -129,17 +67,143 @@
   <main class="main-wrapper">
 
     <!-- ------------------------------------------------------------------
-         VIEW 1: Active Food Rescues Feed
+         VIEW 1: Home Page
          ------------------------------------------------------------------ -->
-    <section class="view-panel active" id="view-rescues">
+    <section class="view-panel active" id="view-home">
+      <!-- Hero Section -->
+      <div class="hero-section" style="border-radius: var(--radius-lg); margin-bottom: 2rem;">
+        <div class="hero-container">
+          <div class="hero-grid">
+            <!-- Hero Text -->
+            <div>
+              <div class="hero-badge-tag">
+                <span class="pulse-dot"></span>
+                <span id="hero-active-count">Connecting Extra Food with People in Need</span>
+              </div>
+              <h2 class="hero-title">
+                Donate Extra Food, <span class="text-emerald">Feed People in Need</span>
+              </h2>
+              <p class="hero-description">
+                A simple, clean platform connecting restaurants, college cafeterias, event caterers, and supermarkets with local charities and shelters. Don't let good food go to waste—share it with those who need it most.
+              </p>
+              <div class="hero-quick-actions">
+                <button class="btn btn-primary btn-lg" onclick="openCreateDonationModal()">
+                  <span>➕ Donate Food Now</span>
+                </button>
+                <button class="btn btn-outline-white btn-lg" onclick="switchView('available')">
+                  <span>🍲 View Available Food</span>
+                </button>
+                <button class="btn btn-secondary btn-lg" onclick="switchView('requests')">
+                  <span>🤝 Request Food</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Hero Live Stat Cards -->
+            <div class="hero-stats-quad">
+              <div class="hero-stat-card">
+                <div class="stat-icon-wrap">🍲</div>
+                <div class="stat-value" id="hero-stat-donations">--</div>
+                <div class="stat-label">Total Donations</div>
+                <div class="stat-subtext">Food listings posted</div>
+              </div>
+
+              <div class="hero-stat-card">
+                <div class="stat-icon-wrap">✅</div>
+                <div class="stat-value" id="hero-stat-completed">--</div>
+                <div class="stat-label">Completed Deliveries</div>
+                <div class="stat-subtext">Successfully shared</div>
+              </div>
+
+              <div class="hero-stat-card">
+                <div class="stat-icon-wrap">🍽️</div>
+                <div class="stat-value" id="hero-stat-meals">--</div>
+                <div class="stat-label">Meals Shared</div>
+                <div class="stat-subtext">Nutritious meals served</div>
+              </div>
+
+              <div class="hero-stat-card">
+                <div class="stat-icon-wrap">⚖️</div>
+                <div class="stat-value" id="hero-stat-waste">--</div>
+                <div class="stat-label">Food Saved (kg)</div>
+                <div class="stat-subtext">Kept out of landfills</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- How RePlate Works in 3 Steps -->
+      <div style="margin-bottom: 2.5rem;">
+        <div class="section-header" style="margin-bottom: 1.5rem;">
+          <div class="section-header-title">
+            <h2>How It Works — 3 Easy Steps</h2>
+            <p>Simple food sharing that anyone can understand and explain in two minutes.</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+          <div style="background: var(--neutral-white); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: var(--shadow-sm); border-top: 4px solid var(--primary-500);">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🍱</div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--neutral-900); margin-bottom: 0.5rem;">1. Donate Extra Food</h3>
+            <p style="font-size: 0.9rem; color: var(--neutral-600); line-height: 1.5;">
+              Restaurants, caterers, or hostels enter the food name, quantity, category, and pickup location in under 30 seconds.
+            </p>
+          </div>
+
+          <div style="background: var(--neutral-white); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: var(--shadow-sm); border-top: 4px solid var(--accent-blue);">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🤝</div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--neutral-900); margin-bottom: 0.5rem;">2. NGO Requests Food</h3>
+            <p style="font-size: 0.9rem; color: var(--neutral-600); line-height: 1.5;">
+              Local charities and shelters view fresh available food and click "Request Food" to reserve it for their community.
+            </p>
+          </div>
+
+          <div style="background: var(--neutral-white); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: var(--shadow-sm); border-top: 4px solid var(--primary-700);">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🚚</div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--neutral-900); margin-bottom: 0.5rem;">3. Pick Up & Share</h3>
+            <p style="font-size: 0.9rem; color: var(--neutral-600); line-height: 1.5;">
+              A volunteer driver collects the food and marks it as delivered. Fresh meals reach hungry people before food spoils!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Available Food Preview -->
+      <div>
+        <div class="section-header" style="margin-bottom: 1.25rem;">
+          <div class="section-header-title">
+            <h2>Fresh Food Ready for Pickup</h2>
+            <p>Live donations currently available for immediate volunteer collection.</p>
+          </div>
+          <div>
+            <button class="btn btn-outline-emerald btn-sm" onclick="switchView('available')">
+              <span>View All Available Food ➔</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="home-recent-donations" class="donations-grid">
+          <!-- Rendered dynamically via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------
+         VIEW 2: Available Food (Browse & Search)
+         ------------------------------------------------------------------ -->
+    <section class="view-panel" id="view-available">
       <div class="section-header">
         <div class="section-header-title">
-          <h2>Active Food Rescue Opportunities</h2>
-          <p>Real-time surplus listings ready for immediate volunteer pickup or intelligent NGO assignment.</p>
+          <h2>Available Food Donations</h2>
+          <p>Browse all available food listings ready for pickup. Filter by food type or search by location.</p>
         </div>
-        <div>
+        <div style="display: flex; gap: 0.5rem;">
           <button class="btn btn-outline-emerald btn-sm" onclick="fetchDonations(true)">
-            <span>🔄 Refresh Feed</span>
+            <span>🔄 Refresh</span>
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openCreateDonationModal()">
+            <span>+ Donate Food</span>
           </button>
         </div>
       </div>
@@ -155,24 +219,24 @@
           <select id="filter-status" class="filter-select">
             <option value="All">All Statuses</option>
             <option value="Available">Available Only</option>
-            <option value="Claimed">Claimed</option>
+            <option value="Claimed">Requested</option>
             <option value="Picked Up">In Transit (Picked Up)</option>
-            <option value="Delivered">Delivered</option>
+            <option value="Delivered">Completed</option>
           </select>
 
           <select id="filter-category" class="filter-select">
             <option value="All">All Categories</option>
             <option value="Cooked Meals">🍲 Cooked Meals</option>
-            <option value="Fresh Produce">🥬 Fresh Produce</option>
-            <option value="Bakery">🥖 Bakery</option>
+            <option value="Fresh Produce">🥬 Fresh Vegetables & Fruit</option>
+            <option value="Bakery">🥖 Bakery & Bread</option>
             <option value="Dairy & Cold">🥛 Dairy & Cold</option>
             <option value="Packaged Groceries">🥫 Packaged Groceries</option>
           </select>
 
           <!-- Grid vs Table View Mode -->
           <div class="view-mode-toggle">
-            <button class="view-mode-btn active" id="view-mode-grid" title="Card Grid View">⊞ Grid</button>
-            <button class="view-mode-btn" id="view-mode-table" title="Compact Table View">☰ Table</button>
+            <button class="view-mode-btn active" id="view-mode-grid" title="Card Grid View">⊞ Cards</button>
+            <button class="view-mode-btn" id="view-mode-table" title="Table View">☰ Table</button>
           </div>
         </div>
       </div>
@@ -187,17 +251,167 @@
     </section>
 
     <!-- ------------------------------------------------------------------
-         VIEW 2: NGO Operations & Dispatch Hub (Pipeline Stepper)
+         VIEW 3: Donate Food (Dedicated Section)
          ------------------------------------------------------------------ -->
-    <section class="view-panel" id="view-dispatch">
+    <section class="view-panel" id="view-donate">
       <div class="section-header">
         <div class="section-header-title">
-          <h2>NGO Operations & Dispatch Hub</h2>
-          <p>End-to-end audit tracking across the four core lifecycle phases: Available → Claimed → Picked Up → Delivered.</p>
+          <h2>Donate Extra Food</h2>
+          <p>Fill out this simple form to share extra food with local charities, shelters, and community kitchens.</p>
+        </div>
+      </div>
+
+      <div style="background: var(--neutral-white); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg); padding: 2rem; box-shadow: var(--shadow-sm); max-width: 900px; margin: 0 auto;">
+        
+        <!-- Quick Demo Presets Bar -->
+        <div style="background: var(--primary-50); border: 1px solid var(--primary-200); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-800); margin-bottom: 0.4rem;">
+            ⚡ Quick 1-Click Demo Fill (For Hackathon Presentation):
+          </div>
+          <div class="preset-buttons-row">
+            <button type="button" class="preset-chip-btn" id="view-preset-buffet">🍱 Hot Lunch Buffet (50 meals)</button>
+            <button type="button" class="preset-chip-btn" id="view-preset-produce">🥬 Farm Fresh Vegetables (40 kg)</button>
+            <button type="button" class="preset-chip-btn" id="view-preset-bakery">🥖 Fresh Bakery Bread (60 loaves)</button>
+          </div>
+        </div>
+
+        <form id="form-donate-page" onsubmit="handleDonatePageSubmit(event)">
+          <div class="form-grid-2">
+            <!-- Donor Organization -->
+            <div class="form-group">
+              <label class="form-label" for="page-donor-id">
+                Donor Organization <span class="required">*</span>
+              </label>
+              <select id="page-donor-id" class="form-control" required></select>
+            </div>
+
+            <!-- Food Name -->
+            <div class="form-group">
+              <label class="form-label" for="page-food-name">
+                Food Name / Description <span class="required">*</span>
+              </label>
+              <input type="text" id="page-food-name" class="form-control" placeholder="e.g. Steamed Rice, Mixed Veg Curry & Dal" required>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <!-- Category -->
+            <div class="form-group">
+              <label class="form-label" for="page-category">
+                Food Category <span class="required">*</span>
+              </label>
+              <select id="page-category" class="form-control" required>
+                <option value="Cooked Meals">🍲 Cooked Meals</option>
+                <option value="Fresh Produce">🥬 Fresh Vegetables & Fruit</option>
+                <option value="Bakery">🥖 Bakery & Bread</option>
+                <option value="Dairy & Cold">🥛 Dairy & Cold</option>
+                <option value="Packaged Groceries">🥫 Packaged Groceries</option>
+              </select>
+            </div>
+
+            <!-- Quantity & Unit -->
+            <div class="form-group">
+              <label class="form-label" for="page-quantity">
+                Quantity & Unit <span class="required">*</span>
+              </label>
+              <div style="display:flex; gap:0.5rem;">
+                <input type="number" id="page-quantity" class="form-control" style="flex:1;" placeholder="e.g. 50" min="1" required>
+                <select id="page-unit" class="form-control" style="width:110px;">
+                  <option value="meals">meals</option>
+                  <option value="kg">kg</option>
+                  <option value="boxes">boxes</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <!-- Dietary Type -->
+            <div class="form-group">
+              <label class="form-label" for="page-dietary">Dietary Classification</label>
+              <select id="page-dietary" class="form-control">
+                <option value="Vegetarian">Vegetarian</option>
+                <option value="Vegan">Vegan</option>
+                <option value="Non-Vegetarian">Non-Vegetarian</option>
+                <option value="Any">General Food</option>
+              </select>
+            </div>
+
+            <!-- Storage Requirement -->
+            <div class="form-group">
+              <label class="form-label" for="page-storage">Storage Requirement</label>
+              <select id="page-storage" class="form-control">
+                <option value="Keep Hot (>60°C)">Keep Hot (>60°C)</option>
+                <option value="Refrigerate (<4°C)">Refrigerate (<4°C)</option>
+                <option value="Room Temperature">Room Temperature</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <!-- Preparation Time -->
+            <div class="form-group">
+              <label class="form-label" for="page-prep-time">
+                Preparation Time <span class="required">*</span>
+              </label>
+              <input type="datetime-local" id="page-prep-time" class="form-control" required>
+            </div>
+
+            <!-- Expiry Time -->
+            <div class="form-group">
+              <label class="form-label" for="page-expiry-time">
+                Collection Deadline / Fresh Until <span class="required">*</span>
+              </label>
+              <input type="datetime-local" id="page-expiry-time" class="form-control" required>
+            </div>
+          </div>
+
+          <!-- Pickup Address -->
+          <div class="form-group">
+            <label class="form-label" for="page-address">
+              Pickup Address & Instructions <span class="required">*</span>
+            </label>
+            <input type="text" id="page-address" class="form-control" placeholder="100 Grand Boulevard, Downtown (Kitchen Loading Dock B)" required>
+            
+            <div class="preset-buttons-row">
+              <span style="font-size:0.75rem; color:var(--neutral-500); align-self:center;">Quick Locations:</span>
+              <button type="button" class="preset-chip-btn page-loc-chip" data-address="100 Grand Boulevard, Downtown" data-lat="40.7150" data-lon="-74.0050">Downtown</button>
+              <button type="button" class="preset-chip-btn page-loc-chip" data-address="45 Market Square, West End" data-lat="40.7280" data-lon="-74.0120">West End</button>
+              <button type="button" class="preset-chip-btn page-loc-chip" data-address="78 Baker Street, North Quarter" data-lat="40.7350" data-lon="-73.9920">North Quarter</button>
+              <button type="button" class="preset-chip-btn page-loc-chip" data-address="250 Campus Walk, Student Center" data-lat="40.7020" data-lon="-74.0150">University Campus</button>
+            </div>
+          </div>
+
+          <input type="hidden" id="page-lat" value="40.7150">
+          <input type="hidden" id="page-lon" value="-74.0050">
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label class="form-label" for="page-notes">Volunteer Instructions / Notes</label>
+            <textarea id="page-notes" class="form-control" placeholder="e.g. Food is packed in clean containers. Please enter through back kitchen entrance."></textarea>
+          </div>
+
+          <div style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+              <span>Post Food Donation</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------
+         VIEW 4: Request Food & Status Tracking
+         ------------------------------------------------------------------ -->
+    <section class="view-panel" id="view-requests">
+      <div class="section-header">
+        <div class="section-header-title">
+          <h2>Request Food & Track Status</h2>
+          <p>Follow every food donation across 4 simple stages: Available → Requested → In Transit → Completed.</p>
         </div>
         <div>
           <button class="btn btn-outline-emerald btn-sm" onclick="fetchDonations(false)">
-            <span>🔄 Sync Pipeline</span>
+            <span>🔄 Sync Status</span>
           </button>
         </div>
       </div>
@@ -206,7 +420,7 @@
         <!-- Step 1: Available -->
         <div class="pipeline-column">
           <div class="pipeline-header">
-            <h3><span>🟢</span> 1. Available</h3>
+            <h3><span>🟢</span> 1. Available Food</h3>
             <span class="pipeline-count" id="count-available">0</span>
           </div>
           <div class="pipeline-cards-list" id="pipeline-available-list">
@@ -214,10 +428,10 @@
           </div>
         </div>
 
-        <!-- Step 2: Claimed -->
+        <!-- Step 2: Requested -->
         <div class="pipeline-column">
           <div class="pipeline-header">
-            <h3><span>🚚</span> 2. Claimed</h3>
+            <h3><span>🤝</span> 2. Requested</h3>
             <span class="pipeline-count" id="count-claimed">0</span>
           </div>
           <div class="pipeline-cards-list" id="pipeline-claimed-list">
@@ -228,7 +442,7 @@
         <!-- Step 3: Picked Up -->
         <div class="pipeline-column">
           <div class="pipeline-header">
-            <h3><span>📦</span> 3. In Transit</h3>
+            <h3><span>📦</span> 3. In Transit (Picked Up)</h3>
             <span class="pipeline-count" id="count-picked">0</span>
           </div>
           <div class="pipeline-cards-list" id="pipeline-picked-list">
@@ -236,10 +450,10 @@
           </div>
         </div>
 
-        <!-- Step 4: Delivered -->
+        <!-- Step 4: Delivered / Completed -->
         <div class="pipeline-column">
           <div class="pipeline-header">
-            <h3><span>✅</span> 4. Delivered</h3>
+            <h3><span>✅</span> 4. Completed (Delivered)</h3>
             <span class="pipeline-count" id="count-delivered">0</span>
           </div>
           <div class="pipeline-cards-list" id="pipeline-delivered-list">
@@ -250,17 +464,17 @@
     </section>
 
     <!-- ------------------------------------------------------------------
-         VIEW 3: Impact Analytics Dashboard
+         VIEW 5: Dashboard & Platform Impact
          ------------------------------------------------------------------ -->
-    <section class="view-panel" id="view-impact">
+    <section class="view-panel" id="view-dashboard">
       <div class="section-header">
         <div class="section-header-title">
-          <h2>Environmental & Social Impact Dashboard</h2>
-          <p>Real-time metrics computed directly from database donation records and FAO food rescue benchmarks.</p>
+          <h2>Food Donation Dashboard</h2>
+          <p>Live metrics and charts calculated directly from database records.</p>
         </div>
         <div>
           <button class="btn btn-outline-emerald btn-sm" onclick="fetchImpactMetrics()">
-            <span>🔄 Recalculate Stats</span>
+            <span>🔄 Recalculate</span>
           </button>
         </div>
       </div>
@@ -270,7 +484,25 @@
         <div class="impact-metric-box">
           <div class="impact-metric-icon icon-emerald">🍲</div>
           <div class="impact-metric-content">
-            <h4>Meals Successfully Delivered</h4>
+            <h4>Total Food Donations</h4>
+            <div class="big-num" id="impact-donations-total">--</div>
+            <p>Total listings posted on platform</p>
+          </div>
+        </div>
+
+        <div class="impact-metric-box">
+          <div class="impact-metric-icon icon-emerald">✅</div>
+          <div class="impact-metric-content">
+            <h4>Completed Donations</h4>
+            <div class="big-num" id="impact-deliveries-completed">--</div>
+            <p>Successfully delivered to charities</p>
+          </div>
+        </div>
+
+        <div class="impact-metric-box">
+          <div class="impact-metric-icon icon-blue">🍽️</div>
+          <div class="impact-metric-content">
+            <h4>Meals Shared</h4>
             <div class="big-num" id="impact-meals-delivered">--</div>
             <p>From total <span id="impact-meals-total">--</span> meals recorded</p>
           </div>
@@ -279,53 +511,35 @@
         <div class="impact-metric-box">
           <div class="impact-metric-icon icon-amber">⚖️</div>
           <div class="impact-metric-content">
-            <h4>Food Waste Diverted</h4>
+            <h4>Food Waste Prevented</h4>
             <div class="big-num" id="impact-waste-kg">--</div>
-            <p>Standard conversion: ~0.42 kg/meal</p>
-          </div>
-        </div>
-
-        <div class="impact-metric-box">
-          <div class="impact-metric-icon icon-blue">🌿</div>
-          <div class="impact-metric-content">
-            <h4>CO2e Emissions Avoided</h4>
-            <div class="big-num" id="impact-co2-kg">--</div>
-            <p>2.5 kg CO2e per kg food diverted</p>
-          </div>
-        </div>
-
-        <div class="impact-metric-box">
-          <div class="impact-metric-icon icon-purple">💵</div>
-          <div class="impact-metric-content">
-            <h4>Economic Food Value Rescued</h4>
-            <div class="big-num" id="impact-money-usd">--</div>
-            <p>Direct community food budget saved</p>
+            <p>Diverted from city landfills</p>
           </div>
         </div>
       </div>
 
       <!-- Environmental Equivalencies Banner -->
       <div class="environmental-equivalencies">
-        <h3 style="font-size:1.15rem; font-weight:800;">🌍 Real-World Environmental Equivalencies</h3>
+        <h3 style="font-size:1.15rem; font-weight:800;">🌍 Community & Environmental Impact</h3>
         <p style="font-size:0.875rem; color:rgba(255,255,255,0.9); margin-top:2px;">
-          Measurable sustainability dividends generated by RePlate rescues across the metropolitan area.
+          Measurable sustainability dividends generated by food donations in our community.
         </p>
 
         <div class="equiv-grid">
           <div class="equiv-item">
             <div class="emoji">🚗</div>
             <h5 id="equiv-cars">--</h5>
-            <p>Equivalent to removing typical gasoline passenger vehicles for 24 hours</p>
+            <p>CO2e reduction equivalent to passenger car days</p>
           </div>
           <div class="equiv-item">
             <div class="emoji">💧</div>
             <h5 id="equiv-water">--</h5>
-            <p>Conserved agricultural water equivalent to daily household consumption</p>
+            <p>Conserved embedded agricultural water</p>
           </div>
           <div class="equiv-item">
-            <div class="emoji">♻️</div>
-            <h5 id="equiv-landfill">--</h5>
-            <p>Diverted from methane-producing municipal landfills</p>
+            <div class="emoji">💵</div>
+            <h5 id="impact-money-usd">--</h5>
+            <p>Direct community food budget saved</p>
           </div>
         </div>
       </div>
@@ -334,7 +548,7 @@
       <div class="impact-charts-row">
         <div class="chart-card">
           <h3>
-            <span>Rescues by Food Category</span>
+            <span>Donations by Food Category</span>
             <span style="font-size:0.8rem; font-weight:500; color:var(--neutral-500);">Live Distribution</span>
           </h3>
           <div class="chart-container">
@@ -344,7 +558,7 @@
 
         <div class="chart-card">
           <h3>
-            <span>Rescue Pipeline Status</span>
+            <span>Donation Workflow Status</span>
             <span style="font-size:0.8rem; font-weight:500; color:var(--neutral-500);">Live Pipeline</span>
           </h3>
           <div class="chart-container">
@@ -355,106 +569,86 @@
     </section>
 
     <!-- ------------------------------------------------------------------
-         VIEW 4: Partner Directory (Donors & NGOs)
+         VIEW 6: About Us
          ------------------------------------------------------------------ -->
-    <section class="view-panel" id="view-directory">
+    <section class="view-panel" id="view-about">
       <div class="section-header">
         <div class="section-header-title">
-          <h2>Platform Partner Directory</h2>
-          <p>Verified food donors, certified rescue organizations, and community kitchens in the network.</p>
+          <h2>About RePlate — Food Donation Platform</h2>
+          <p>A simple, beginner-friendly platform built to solve local food waste and hunger.</p>
         </div>
       </div>
 
-      <h3 style="font-size:1.15rem; font-weight:800; color:var(--neutral-900); margin: 1.5rem 0 1rem 0;">
-        🚚 Certified NGO Rescue Partners
-      </h3>
-      <div class="directory-grid" id="directory-ngos-list">
-        <!-- Rendered via JS -->
-      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Card 1: Problem -->
+        <div style="background: var(--neutral-white); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">🛑</div>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--neutral-900); margin-bottom: 0.75rem;">The Problem</h3>
+          <p style="color: var(--neutral-600); line-height: 1.6; font-size: 0.95rem;">
+            Over <strong>30% of all food</strong> is thrown into trash bins every day after hotel banquets, restaurant services, and campus events. At the same time, nearby shelters, hostels, and families go to bed hungry.
+          </p>
+          <p style="color: var(--neutral-600); line-height: 1.6; font-size: 0.95rem; margin-top: 0.75rem;">
+            The problem is not a shortage of food—it is the <strong>lack of a simple, quick way</strong> to notify nearby charities before fresh food spoils.
+          </p>
+        </div>
 
-      <h3 style="font-size:1.15rem; font-weight:800; color:var(--neutral-900); margin: 2rem 0 1rem 0;">
-        🏛️ Registered Food Donors
-      </h3>
-      <div class="directory-grid" id="directory-donors-list">
-        <!-- Rendered via JS -->
-      </div>
-    </section>
-
-    <!-- ------------------------------------------------------------------
-         VIEW 5: Matching Engine Transparency & Algorithm Explainer
-         ------------------------------------------------------------------ -->
-    <section class="view-panel" id="view-algorithm">
-      <div class="section-header">
-        <div class="section-header-title">
-          <h2>Deterministic Matching Algorithm Architecture</h2>
-          <p>Transparent, explainable multi-factor scoring ensuring safe, rapid, and auditable food rescue dispatches.</p>
+        <!-- Card 2: Solution -->
+        <div style="background: var(--neutral-white); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌱</div>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--neutral-900); margin-bottom: 0.75rem;">Our Solution: RePlate</h3>
+          <p style="color: var(--neutral-600); line-height: 1.6; font-size: 0.95rem;">
+            RePlate makes food rescue as simple as posting a message:
+          </p>
+          <ul style="color: var(--neutral-700); font-size: 0.95rem; margin-top: 0.75rem; line-height: 1.8; list-style-position: inside;">
+            <li>🍲 <strong>Donors</strong> post extra food in under 30 seconds.</li>
+            <li>🤝 <strong>Charities & NGOs</strong> view and request food with 1 click.</li>
+            <li>🚚 <strong>Volunteers</strong> pick up the food and share it directly.</li>
+            <li>📊 <strong>Dashboard</strong> tracks total meals and environmental impact live.</li>
+          </ul>
         </div>
       </div>
 
-      <div class="algo-weights-grid">
-        <div class="algo-factor-card">
-          <div class="algo-weight-badge">35% Weight</div>
-          <div class="algo-factor-title">📍 Proximity & Transit Distance</div>
-          <div class="algo-factor-desc">
-            Calculated via Earth-curvature <strong>Haversine Distance</strong> between donor GPS and NGO headquarters. Full score within 2 km; decay curve up to maximum fleet radius. Eliminates excessive transit times.
-          </div>
-        </div>
-
-        <div class="algo-factor-card">
-          <div class="algo-weight-badge">25% Weight</div>
-          <div class="algo-factor-title">⏰ Shelf-Life Urgency & ETA</div>
-          <div class="algo-factor-desc">
-            Evaluates remaining food safety window against estimated rescue arrival time (8m mobilization + 2.5m/km transit). For donations expiring in under 2 hours, distant NGOs are penalized to prevent spoilage in traffic.
-          </div>
-        </div>
-
-        <div class="algo-factor-card">
-          <div class="algo-weight-badge">20% Weight</div>
-          <div class="algo-factor-title">🚚 Vehicle & Batch Capacity</div>
-          <div class="algo-factor-desc">
-            Compares donation volume against NGO intake capacity. Rewards ideal single-run load utilization (30% to 100% capacity) while flagging overloaded trips that would require multiple vehicles.
-          </div>
-        </div>
-
-        <div class="algo-factor-card">
-          <div class="algo-weight-badge">15% Weight</div>
-          <div class="algo-factor-title">🥗 Category Alignment & Equipment</div>
-          <div class="algo-factor-desc">
-            Matches food categories (Cooked Hot Meals, Fresh Cold Produce, Bakery, Dairy) with NGO distribution facilities (e.g. thermal hot boxes vs cold-chain refrigeration units).
-          </div>
-        </div>
-
-        <div class="algo-factor-card">
-          <div class="algo-weight-badge">5% Weight</div>
-          <div class="algo-factor-title">⭐ Fulfillment Reliability</div>
-          <div class="algo-factor-desc">
-            Incentivizes dependable community partners based on historical pickup promptness and verified beneficiary distribution rates.
-          </div>
-        </div>
-      </div>
-
-      <!-- Why Rule-Based Heuristics Explainer -->
-      <div style="background:var(--neutral-white); border:1px solid var(--neutral-200); border-radius:var(--radius-lg); padding:1.75rem; box-shadow:var(--shadow-sm); line-height:1.6;">
-        <h3 style="font-size:1.15rem; font-weight:800; color:var(--neutral-900); margin-bottom:0.75rem;">
-          💡 Why RePlate Chooses Explainable Heuristics Over Black-Box Models
+      <!-- Matching Algorithm Explained Simply -->
+      <div style="background: var(--neutral-white); border: 1px solid var(--neutral-200); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: var(--shadow-sm); margin-bottom: 2rem;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--neutral-900); margin-bottom: 0.75rem;">
+          🧠 How NGO Matching Works (In Simple English)
         </h3>
-        <p style="color:var(--neutral-600); margin-bottom:1rem;">
-          In urgent food logistics, opaque neural predictions present major safety and compliance liabilities. Our deterministic scoring model guarantees:
+        <p style="color: var(--neutral-600); margin-bottom: 1.25rem; font-size: 0.95rem;">
+          When an extra food donation is posted, RePlate calculates the best NGO partner using 4 fair and transparent rules:
         </p>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem;">
-          <div style="background:var(--neutral-50); padding:1rem; border-radius:var(--radius-md); border-left:3px solid var(--primary-600);">
-            <strong style="color:var(--neutral-900);">Zero Hallucinations:</strong>
-            <p style="font-size:0.85rem; color:var(--neutral-600); margin-top:4px;">No hallucinated routes, fake pickup times, or non-existent recipient shelters.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+          <div style="background: var(--neutral-50); border-left: 4px solid var(--primary-600); padding: 1rem; border-radius: var(--radius-md);">
+            <strong style="color: var(--neutral-900); display: block; margin-bottom: 4px;">1. Distance (35%)</strong>
+            <p style="font-size: 0.85rem; color: var(--neutral-600);">Shelters closest to the donor get higher scores so food arrives fast and hot.</p>
           </div>
-          <div style="background:var(--neutral-50); padding:1rem; border-radius:var(--radius-md); border-left:3px solid var(--primary-600);">
-            <strong style="color:var(--neutral-900);">Food Safety Compliance:</strong>
-            <p style="font-size:0.85rem; color:var(--neutral-600); margin-top:4px;">Strict mathematical limits ensure cooked items are never dispatched if the transit ETA exceeds the temperature safety deadline.</p>
+
+          <div style="background: var(--neutral-50); border-left: 4px solid var(--accent-blue); padding: 1rem; border-radius: var(--radius-md);">
+            <strong style="color: var(--neutral-900); display: block; margin-bottom: 4px;">2. Urgency (25%)</strong>
+            <p style="font-size: 0.85rem; color: var(--neutral-600);">If food expires in under 2 hours, nearby NGOs are prioritized to prevent waste.</p>
           </div>
-          <div style="background:var(--neutral-50); padding:1rem; border-radius:var(--radius-md); border-left:3px solid var(--primary-600);">
-            <strong style="color:var(--neutral-900);">100% Auditability:</strong>
-            <p style="font-size:0.85rem; color:var(--neutral-600); margin-top:4px;">Every NGO score provides a clear breakdown (+35 pts distance, +25 pts urgency) ready for public grants and municipal inspections.</p>
+
+          <div style="background: var(--neutral-50); border-left: 4px solid var(--accent-gold); padding: 1rem; border-radius: var(--radius-md);">
+            <strong style="color: var(--neutral-900); display: block; margin-bottom: 4px;">3. Vehicle Capacity (20%)</strong>
+            <p style="font-size: 0.85rem; color: var(--neutral-600);">Large donations are matched with organizations that have vans to transport them.</p>
+          </div>
+
+          <div style="background: var(--neutral-50); border-left: 4px solid var(--primary-700); padding: 1rem; border-radius: var(--radius-md);">
+            <strong style="color: var(--neutral-900); display: block; margin-bottom: 4px;">4. Food Category (15%)</strong>
+            <p style="font-size: 0.85rem; color: var(--neutral-600);">Matches cooked food to hot kitchens, and cold produce to refrigerator-equipped pantries.</p>
           </div>
         </div>
+      </div>
+
+      <!-- College Hackathon Technology Card -->
+      <div style="background: var(--primary-50); border: 1px solid var(--primary-200); border-radius: var(--radius-lg); padding: 1.5rem;">
+        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--primary-900); margin-bottom: 0.5rem;">
+          🎓 College Hackathon Project Highlights
+        </h4>
+        <p style="font-size: 0.9rem; color: var(--primary-800); line-height: 1.6;">
+          Built entirely with <strong>Node.js, Express.js, SQLite, HTML5, CSS3, and JavaScript</strong>. 
+          Zero paid APIs, zero third-party accounts, and 100% self-contained for offline evaluation.
+        </p>
       </div>
     </section>
 
@@ -467,8 +661,8 @@
     <div class="modal-container modal-lg">
       <div class="modal-header">
         <div class="modal-title-group">
-          <h3 id="donation-form-title">Post Fresh Food Donation</h3>
-          <p>Register surplus food with accurate safety parameters for rapid NGO matching.</p>
+          <h3 id="donation-form-title">Donate Extra Food</h3>
+          <p>Enter details of surplus food to connect with local charities and shelters.</p>
         </div>
         <button class="modal-close-btn" onclick="closeModal('modal-donation-form')">&times;</button>
       </div>
@@ -477,12 +671,12 @@
         <!-- Quick Demo Presets Bar -->
         <div style="background:var(--primary-50); border:1px solid var(--primary-200); padding:0.75rem 1rem; border-radius:var(--radius-md); margin-bottom:1.25rem;">
           <div style="font-size:0.8rem; font-weight:700; color:var(--primary-800); margin-bottom:0.35rem;">
-            ⚡ Quick Demo Auto-Fill (For Hackathon Presentation Rehearsal):
+            ⚡ Quick Demo Auto-Fill (For Hackathon Presentation):
           </div>
           <div class="preset-buttons-row">
-            <button type="button" class="preset-chip-btn" id="demo-preset-buffet">🍱 Hot Banquet Buffet</button>
-            <button type="button" class="preset-chip-btn" id="demo-preset-produce">🥬 Farm Fresh Produce</button>
-            <button type="button" class="preset-chip-btn" id="demo-preset-bakery">🥖 Artisan Bakery Breads</button>
+            <button type="button" class="preset-chip-btn" id="demo-preset-buffet">🍱 Hot Banquet Buffet (50 meals)</button>
+            <button type="button" class="preset-chip-btn" id="demo-preset-produce">🥬 Farm Fresh Vegetables (40 kg)</button>
+            <button type="button" class="preset-chip-btn" id="demo-preset-bakery">🥖 Artisan Bakery Breads (60 loaves)</button>
           </div>
         </div>
 
@@ -503,7 +697,7 @@
               <label class="form-label" for="don-food-name">
                 Food Name / Description <span class="required">*</span>
               </label>
-              <input type="text" id="don-food-name" class="form-control" placeholder="e.g. Gourmet Rice Pilaf & Roasted Chicken" required>
+              <input type="text" id="don-food-name" class="form-control" placeholder="e.g. Gourmet Rice Pilaf & Roasted Veggies" required>
             </div>
           </div>
 
@@ -515,8 +709,8 @@
               </label>
               <select id="don-category" class="form-control" required>
                 <option value="Cooked Meals">🍲 Cooked Meals</option>
-                <option value="Fresh Produce">🥬 Fresh Produce</option>
-                <option value="Bakery">🥖 Bakery</option>
+                <option value="Fresh Produce">🥬 Fresh Vegetables & Fruit</option>
+                <option value="Bakery">🥖 Bakery & Bread</option>
                 <option value="Dairy & Cold">🥛 Dairy & Cold</option>
                 <option value="Packaged Groceries">🥫 Packaged Groceries</option>
               </select>
@@ -546,8 +740,7 @@
                 <option value="Vegetarian">Vegetarian</option>
                 <option value="Vegan">Vegan</option>
                 <option value="Non-Vegetarian">Non-Vegetarian</option>
-                <option value="Halal">Halal</option>
-                <option value="Any">General Surplus</option>
+                <option value="Any">General Food</option>
               </select>
             </div>
 
@@ -574,7 +767,7 @@
             <!-- Expiry Time -->
             <div class="form-group">
               <label class="form-label" for="don-expiry-time">
-                Collection Deadline / Expiry <span class="required">*</span>
+                Collection Deadline / Fresh Until <span class="required">*</span>
               </label>
               <input type="datetime-local" id="don-expiry-time" class="form-control" required>
             </div>
@@ -583,41 +776,33 @@
           <!-- Pickup Address -->
           <div class="form-group">
             <label class="form-label" for="don-address">
-              Pickup Address & Loading Instructions <span class="required">*</span>
+              Pickup Address & Instructions <span class="required">*</span>
             </label>
-            <input type="text" id="don-address" class="form-control" placeholder="100 Grand Boulevard, Downtown (Loading Bay B)" required>
+            <input type="text" id="don-address" class="form-control" placeholder="100 Grand Boulevard, Downtown (Kitchen Loading Bay B)" required>
             
             <!-- Address Preset Chips -->
             <div class="preset-buttons-row">
-              <span style="font-size:0.75rem; color:var(--neutral-500); align-self:center;">Location presets:</span>
+              <span style="font-size:0.75rem; color:var(--neutral-500); align-self:center;">Quick Locations:</span>
               <button type="button" class="preset-chip-btn preset-loc-chip" data-address="100 Grand Boulevard, Downtown" data-lat="40.7150" data-lon="-74.0050">Downtown</button>
               <button type="button" class="preset-chip-btn preset-loc-chip" data-address="45 Market Square, West End" data-lat="40.7280" data-lon="-74.0120">West End</button>
               <button type="button" class="preset-chip-btn preset-loc-chip" data-address="78 Baker Street, North Quarter" data-lat="40.7350" data-lon="-73.9920">North Quarter</button>
-              <button type="button" class="preset-chip-btn preset-loc-chip" data-address="250 Campus Walk, University District" data-lat="40.7020" data-lon="-74.0150">University</button>
+              <button type="button" class="preset-chip-btn preset-loc-chip" data-address="250 Campus Walk, Student Center" data-lat="40.7020" data-lon="-74.0150">University Campus</button>
             </div>
           </div>
 
-          <!-- Lat / Lon Coordinates -->
-          <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label" for="don-lat">Latitude</label>
-              <input type="number" step="any" id="don-lat" class="form-control" value="40.7150">
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="don-lon">Longitude</label>
-              <input type="number" step="any" id="don-lon" class="form-control" value="-74.0050">
-            </div>
-          </div>
+          <!-- Hidden coordinates -->
+          <input type="hidden" id="don-lat" value="40.7150">
+          <input type="hidden" id="don-lon" value="-74.0050">
 
           <!-- Notes -->
           <div class="form-group">
-            <label class="form-label" for="don-notes">Special Packaging / Pickup Instructions</label>
-            <textarea id="don-notes" class="form-control" placeholder="e.g. Please bring insulated food pans. Enter through security gate 2."></textarea>
+            <label class="form-label" for="don-notes">Volunteer Pickup Notes</label>
+            <textarea id="don-notes" class="form-control" placeholder="e.g. Please bring insulated food bags. Enter through rear kitchen door."></textarea>
           </div>
 
           <div class="modal-footer" style="padding-left:0; padding-right:0; margin-top:1.5rem;">
             <button type="button" class="btn btn-secondary" onclick="closeModal('modal-donation-form')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save & Publish Donation</button>
+            <button type="submit" class="btn btn-primary">Save & Post Donation</button>
           </div>
         </form>
       </div>
@@ -625,14 +810,14 @@
   </div>
 
   <!-- ======================================================================
-       MODAL: Smart NGO Matcher Results
+       MODAL: Best NGO Match Engine
        ====================================================================== -->
   <div class="modal-backdrop" id="modal-smart-match">
     <div class="modal-container modal-lg">
       <div class="modal-header">
         <div class="modal-title-group">
-          <h3>⚡ Intelligent Rescue Match Engine</h3>
-          <p>Deterministic multi-criteria ranking for rapid, safe food rescue dispatch.</p>
+          <h3>⚡ Recommended Charity Matches</h3>
+          <p>Transparent matching based on closest distance, urgency, and vehicle capacity.</p>
         </div>
         <button class="modal-close-btn" onclick="closeModal('modal-smart-match')">&times;</button>
       </div>
@@ -654,14 +839,14 @@
   </div>
 
   <!-- ======================================================================
-       MODAL: Claim Donation Dialog
+       MODAL: Request Food Dialog
        ====================================================================== -->
   <div class="modal-backdrop" id="modal-claim">
     <div class="modal-container">
       <div class="modal-header">
         <div class="modal-title-group">
-          <h3>🚚 Claim Food Rescue</h3>
-          <p>Select your rescue organization to claim this donation for collection.</p>
+          <h3>🤝 Request Food Donation</h3>
+          <p>Select your charity or shelter organization to request this food.</p>
         </div>
         <button class="modal-close-btn" onclick="closeModal('modal-claim')">&times;</button>
       </div>
@@ -676,20 +861,20 @@
 
           <div class="form-group">
             <label class="form-label" for="claim-ngo-id">
-              Claiming NGO / Shelter Organization <span class="required">*</span>
+              Requesting Charity / Shelter <span class="required">*</span>
             </label>
             <select id="claim-ngo-id" class="form-control" required></select>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="claim-notes">Volunteer Dispatch Notes</label>
-            <textarea id="claim-notes" class="form-control" placeholder="e.g. Volunteer driver Alex dispatched with insulated van 3. ETA 20 minutes."></textarea>
+            <label class="form-label" for="claim-notes">Pickup & Volunteer Notes</label>
+            <textarea id="claim-notes" class="form-control" placeholder="e.g. Volunteer driver arriving in 20 minutes with insulated bags."></textarea>
           </div>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeModal('modal-claim')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Confirm & Claim Rescue</button>
+          <button type="submit" class="btn btn-primary">Confirm & Request Food</button>
         </div>
       </form>
     </div>
@@ -706,10 +891,10 @@
   <footer class="footer">
     <div class="footer-container">
       <div>
-        <strong>RePlate</strong> — Intelligent Food Rescue Platform. Built for the Food Donation Platform Hackathon.
+        <strong>RePlate</strong> — Food Donation Platform. Built for College Hackathon.
       </div>
       <div>
-        Powered by Node.js, Express & SQLite • 100% Deterministic Transparent Matching
+        Powered by Node.js, Express & SQLite • Clean, Simple & Beginner-Friendly
       </div>
     </div>
   </footer>
