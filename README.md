@@ -67,6 +67,28 @@ http://127.0.0.1:5000
 
 ---
 
+## ☁️ Deploying on Vercel (Free Serverless Hosting)
+
+RePlate comes pre-configured with `vercel.json`, `api/index.js`, Node 22 runtime engine, and writable `/tmp` SQLite persistence for zero-config Vercel deployment:
+
+1. Push your code to GitHub:
+   ```bash
+   git add .
+   git commit -m "Deploy RePlate to Vercel"
+   git push origin master
+   ```
+2. In your [Vercel Dashboard](https://vercel.com):
+   * Click **Add New...** ➔ **Project**.
+   * Import your `replate-food-donation` repository.
+   * Keep all default build settings (Framework: *Other*, Root Directory: `./`).
+   * Click **Deploy**.
+3. Your app is live in seconds with live database endpoints:
+   * Frontend: `https://your-project.vercel.app/`
+   * Health Check: `https://your-project.vercel.app/api/health`
+   * API: `https://your-project.vercel.app/api/donations`
+
+---
+
 ## 🧪 Automated Testing
 
 RePlate includes a built-in test suite covering all API endpoints, database operations, and status workflows:
