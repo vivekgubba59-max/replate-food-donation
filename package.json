@@ -1,0 +1,27 @@
+{
+  "name": "replate",
+  "version": "1.0.0",
+  "description": "RePlate — Intelligent Food Rescue Platform (Node.js + Express + SQLite)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "food-rescue",
+    "food-donation",
+    "express",
+    "sqlite",
+    "hackathon"
+  ],
+  "author": "RePlate Team",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^13.0.3"
+  }
+}
